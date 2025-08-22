@@ -395,12 +395,6 @@
             <button class="game-button" onclick="openGameModal('arkanoid')">
                 🔴 Арканоид
             </button>
-            <button class="game-button" onclick="openGameModal('snake')">
-                🐍 Змейка
-            </button>
-            <button class="game-button" onclick="openGameModal('runner')">
-                🏃 Раннер
-            </button>
             <button class="game-button music-button" onclick="openMusicModal()">
                 🎵 Музыкальная коллекция
             </button>
@@ -463,38 +457,31 @@
         let gameRunning = false;
         let gamePaused = false;
         
-        // Альбом Karmageddon с редкостью
+        // ПРАВИЛЬНЫЙ ТРЕКЛИСТ KARMAGEDDON
         const karmageddonTracks = [
-            // Обычные (65%)
-            { id: 'track1', title: 'Карма', artist: 'Kizaru', rarity: 'common', description: 'Открывающий трек альбома' },
-            { id: 'track2', title: 'Делюкс', artist: 'Kizaru', rarity: 'common', description: 'Роскошный звук' },
-            { id: 'track3', title: 'Лайт', artist: 'Kizaru', rarity: 'common', description: 'Легкий флоу' },
-            { id: 'track4', title: 'Понедельник', artist: 'Kizaru', rarity: 'common', description: 'Начало недели' },
-            { id: 'track5', title: 'Диалог', artist: 'Kizaru', rarity: 'common', description: 'Разговор с собой' },
-            { id: 'track6', title: 'Карьера', artist: 'Kizaru', rarity: 'common', description: 'Путь к успеху' },
-            { id: 'track7', title: 'Кэш', artist: 'Kizaru', rarity: 'common', description: 'О деньгах' },
-            { id: 'track8', title: 'Рапитура', artist: 'Kizaru', rarity: 'common', description: 'Чистый рэп' },
-            
-            // Редкие (20%)
-            { id: 'track9', title: 'Взлет', artist: 'Kizaru', rarity: 'rare', description: 'На пике формы' },
-            { id: 'track10', title: 'Карамель', artist: 'Kizaru', rarity: 'rare', description: 'Сладкий хит' },
-            { id: 'track11', title: 'Шрамы', artist: 'Kizaru', rarity: 'rare', description: 'Следы прошлого' },
-            
-            // Эпические (10%)
-            { id: 'track12', title: 'Дисквалификация', artist: 'Kizaru', rarity: 'epic', description: 'Мощный панч' },
-            { id: 'track13', title: 'Кризис', artist: 'Kizaru', rarity: 'epic', description: 'Темная тема' },
-            { id: 'track14', title: 'Последний раз', artist: 'Kizaru', rarity: 'epic', description: 'Финальный аккорд' },
-            
-            // Легендарный (5%)
-            { id: 'track15', title: 'Время 15:15', artist: 'Kizaru', rarity: 'legendary', description: 'Магическое время' }
+            { id: 'track1', title: 'Дежавю', artist: 'Kizaru', rarity: 'legendary', description: 'Мистическое чувство' },
+            { id: 'track2', title: 'Top Dog', artist: 'Kizaru', rarity: 'common', description: 'Лидер стаи' },
+            { id: 'track3', title: 'Водопад', artist: 'Kizaru', rarity: 'rare', description: 'Поток сознания' },
+            { id: 'track4', title: 'Держу район', artist: 'Kizaru', rarity: 'epic', description: 'Власть улиц' },
+            { id: 'track5', title: 'Все что угодно', artist: 'Kizaru', rarity: 'common', description: 'Без границ' },
+            { id: 'track6', title: 'MONEY LONG', artist: 'Kizaru', rarity: 'legendary', description: 'Бесконечные купюры' },
+            { id: 'track7', title: 'Deep End', artist: 'Kizaru', rarity: 'epic', description: 'На глубине' },
+            { id: 'track8', title: 'Сим салабим', artist: 'Kizaru', rarity: 'common', description: 'Магическое заклинание' },
+            { id: 'track9', title: 'Smooth operator', artist: 'Kizaru', rarity: 'rare', description: 'Плавные движения' },
+            { id: 'track10', title: 'Психопат-лунатик', artist: 'Kizaru', rarity: 'epic', description: 'Ночные видения' },
+            { id: 'track11', title: 'Я сделал это', artist: 'Kizaru', rarity: 'common', description: 'Достижение цели' },
+            { id: 'track12', title: 'Ещё одна ночь', artist: 'Kizaru', rarity: 'common', description: 'Бесконечные ночи' },
+            { id: 'track13', title: 'Cinderella', artist: 'Kizaru', rarity: 'rare', description: 'Сказочная история' },
+            { id: 'track14', title: 'На мне детка', artist: 'Kizaru', rarity: 'common', description: 'Стильный образ' },
+            { id: 'track15', title: 'Исповедь', artist: 'Kizaru', rarity: 'rare', description: 'Откровения души' }
         ];
         
-        // Вероятности выпадения
+        // Вероятности выпадения по редкости
         const rarityChances = {
-            'common': 65,
-            'rare': 20,
-            'epic': 10,
-            'legendary': 5
+            'common': 65,      // 6 треков
+            'rare': 20,        // 4 трека 
+            'epic': 10,        // 3 трека
+            'legendary': 5     // 2 трека
         };
         
         // Цвета редкости
@@ -841,34 +828,16 @@
             const modal = document.getElementById('gameModal');
             const title = document.getElementById('gameTitle');
             
-            const gameNames = {
-                'arkanoid': '🔴 Арканоид',
-                'snake': '🐍 Змейка', 
-                'runner': '🏃 Раннер'
-            };
-            
-            title.textContent = gameNames[gameType];
+            title.textContent = '🔴 Арканоид';
             modal.style.display = 'block';
             
             document.getElementById('gameOverDiv').style.display = 'none';
-            
-            if (gameType === 'arkanoid') {
-                startArkanoidGame();
-            } else if (gameType === 'snake') {
-                startSnakeGame();
-            } else {
-                document.getElementById('gameInstructions').textContent = 
-                    'Эта игра скоро будет готова! А пока попробуйте Арканоид или Змейку 😊';
-            }
+            startArkanoidGame();
         }
         
         // Перезапуск текущей игры
         function restartCurrentGame() {
-            if (currentGameType === 'arkanoid') {
-                startArkanoidGame();
-            } else if (currentGameType === 'snake') {
-                startSnakeGame();
-            }
+            startArkanoidGame();
         }
         
         // Закрытие игрового модального окна
@@ -938,8 +907,10 @@
             tg.showAlert(`🎵 Сейчас играет:\n${trackTitle} - ${trackArtist}`);
         }
         
-        // Показать переход между уровнями
+        // ИСПРАВЛЕННАЯ ФУНКЦИЯ ПЕРЕХОДА УРОВНЕЙ
         function showLevelTransition(level, callback) {
+            // Полностью останавливаем игру
+            gameRunning = false;
             gamePaused = true;
             
             const transitionDiv = document.getElementById('levelTransitionDiv');
@@ -950,17 +921,18 @@
                 </div>
             `;
             
-            // Убираем переход через 2.5 секунды
+            // Убираем переход через 2.5 секунды и ПРАВИЛЬНО возобновляем игру
             setTimeout(() => {
                 transitionDiv.innerHTML = '';
                 gamePaused = false;
-                if (callback) callback();
+                gameRunning = true; // ВАЖНО: Возобновляем игру
+                if (callback) callback(); // Выполняем callback
             }, 2500);
         }
         
         // Показать всплывающее окно трека
         function showTrackPopup(track, isNew) {
-            gamePaused = true;
+            gamePaused = true; // Останавливаем игру на время всплывающего окна
             
             const popup = document.createElement('div');
             popup.className = 'track-popup';
@@ -992,10 +964,10 @@
         // Закрыть всплывающее окно трека
         function closeTrackPopup(button) {
             button.parentElement.remove();
-            gamePaused = false;
+            gamePaused = false; // Возобновляем игру
         }
         
-        // АРКАНОИД ИГРА (ПОЛНОСТЬЮ ПЕРЕРАБОТАННАЯ)
+        // АРКАНОИД ИГРА (ИСПРАВЛЕННАЯ ВЕРСИЯ)
         function startArkanoidGame() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -1143,16 +1115,20 @@
                 setTimeout(updateGameStats, 1000);
             }
             
-            // Создание пластинки (без уведомлений)
+            // ИСПРАВЛЕННАЯ ПЛАСТИНКА: движется по полю, не улетает
             function createVinylRecord() {
                 vinylRecord = {
-                    x: Math.random() * (canvas.width - 40) + 20,
-                    y: 50,
-                    dx: (Math.random() - 0.5) * 1.5,
-                    dy: 0.8,
+                    x: Math.random() * (canvas.width - 60) + 30, // Отступы от краев
+                    y: 60,
+                    dx: (Math.random() - 0.5) * 2, // Горизонтальная скорость
+                    dy: 0.8 + Math.random() * 0.4, // Вертикальная скорость
                     radius: 18,
                     timeLeft: 5000,
-                    rotation: 0
+                    rotation: 0,
+                    // Новые параметры для движения по полю
+                    directionChangeTimer: 0,
+                    targetX: Math.random() * canvas.width,
+                    targetY: Math.random() * 150 + 50
                 };
             }
             
@@ -1233,23 +1209,41 @@
                     }
                 });
                 
-                // Движение пластинки
+                // ИСПРАВЛЕННОЕ ДВИЖЕНИЕ ПЛАСТИНКИ
                 if (vinylRecord) {
+                    // Плавное движение к целевой точке
+                    const targetDx = vinylRecord.targetX - vinylRecord.x;
+                    const targetDy = vinylRecord.targetY - vinylRecord.y;
+                    const distance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+                    
+                    if (distance < 20 || vinylRecord.directionChangeTimer <= 0) {
+                        // Выбираем новую цель в пределах поля
+                        vinylRecord.targetX = Math.random() * (canvas.width - 60) + 30;
+                        vinylRecord.targetY = Math.random() * (canvas.height - 150) + 50;
+                        vinylRecord.directionChangeTimer = 120; // 2 секунды при 60fps
+                    }
+                    
+                    // Движение к цели
+                    const speed = 1.2;
+                    vinylRecord.dx = (targetDx / distance) * speed;
+                    vinylRecord.dy = (targetDy / distance) * speed;
+                    
                     vinylRecord.x += vinylRecord.dx;
                     vinylRecord.y += vinylRecord.dy;
-                    vinylRecord.rotation += 0.1;
+                    vinylRecord.rotation += 0.15;
                     vinylRecord.timeLeft -= 16;
+                    vinylRecord.directionChangeTimer--;
                     
-                    if (vinylRecord.x <= vinylRecord.radius || vinylRecord.x >= canvas.width - vinylRecord.radius) {
-                        vinylRecord.dx = -vinylRecord.dx;
-                    }
+                    // ПРИНУДИТЕЛЬНО УДЕРЖИВАЕМ ПЛАСТИНКУ В ПОЛЕ
+                    vinylRecord.x = Math.max(vinylRecord.radius + 5, Math.min(canvas.width - vinylRecord.radius - 5, vinylRecord.x));
+                    vinylRecord.y = Math.max(vinylRecord.radius + 5, Math.min(canvas.height - 80, vinylRecord.y));
                     
                     // Коллизия с пластинкой
                     const dx = ball.x - vinylRecord.x;
                     const dy = ball.y - vinylRecord.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const collisionDistance = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (distance < ball.radius + vinylRecord.radius) {
+                    if (collisionDistance < ball.radius + vinylRecord.radius) {
                         const randomTrack = getRandomTrack();
                         const isNewTrack = !unlockedTracks.includes(randomTrack.id);
                         
@@ -1272,7 +1266,7 @@
                     }
                 }
                 
-                // Переход на следующий уровень
+                // ИСПРАВЛЕННЫЙ ПЕРЕХОД НА СЛЕДУЮЩИЙ УРОВЕНЬ
                 const activeBlocks = blocks.filter(block => block.active);
                 if (activeBlocks.length === 0) {
                     gameLevel++;
@@ -1284,7 +1278,7 @@
                     
                     gameScore += 100;
                     
-                    // Показываем переход уровня
+                    // Показываем переход уровня с правильным callback
                     showLevelTransition(gameLevel, () => {
                         // После перехода генерируем новые блоки
                         generateBlocks();
@@ -1297,6 +1291,8 @@
                         ball.dx = Math.sin(angle) * ballSpeed;
                         ball.dy = -Math.cos(angle) * ballSpeed;
                     });
+                    
+                    return; // Выходим из цикла до завершения перехода
                 }
                 
                 // РИСОВАНИЕ
@@ -1338,20 +1334,24 @@
                     ctx.translate(vinylRecord.x, vinylRecord.y);
                     ctx.rotate(vinylRecord.rotation);
                     
+                    // Основа пластинки
                     ctx.fillStyle = '#000';
                     ctx.beginPath();
                     ctx.arc(0, 0, vinylRecord.radius, 0, Math.PI * 2);
                     ctx.fill();
                     
+                    // Обводка
                     ctx.strokeStyle = '#4ecdc4';
                     ctx.lineWidth = 2;
                     ctx.stroke();
                     
+                    // Центральная дырка
                     ctx.fillStyle = '#4ecdc4';
                     ctx.beginPath();
                     ctx.arc(0, 0, 4, 0, Math.PI * 2);
                     ctx.fill();
                     
+                    // Кольца
                     for (let i = 0; i < 3; i++) {
                         ctx.beginPath();
                         ctx.arc(0, 0, 6 + i * 3, 0, Math.PI * 2);
@@ -1369,208 +1369,6 @@
                 }
                 
                 requestAnimationFrame(gameLoop);
-            }
-        }
-        
-        // ЗМЕЙКА ИГРА (СОКРАЩЕННАЯ ВЕРСИЯ)
-        function startSnakeGame() {
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            document.getElementById('gameOverDiv').style.display = 'none';
-            document.getElementById('gameInstructions').textContent = 'Используйте стрелки или свайпы для управления';
-            
-            // Переменные змейки
-            const gridSize = 16;
-            let snake = [{ x: 160, y: 120 }];
-            let food = { x: 80, y: 80 };
-            let direction = { x: gridSize, y: 0 };
-            let gameScore = 0;
-            let gameStartTime = Date.now();
-            let lastTrackTime = Date.now();
-            
-            gameRunning = false;
-            gamePaused = false;
-            
-            // Таймер подготовки
-            let countdown = 3;
-            showCountdown();
-            
-            function showCountdown() {
-                const countdownDiv = document.getElementById('countdownDiv');
-                
-                if (countdown > 0) {
-                    countdownDiv.innerHTML = `<div class="countdown">${countdown}</div>`;
-                    countdown--;
-                    setTimeout(showCountdown, 1000);
-                } else {
-                    countdownDiv.innerHTML = `<div class="countdown">GO!</div>`;
-                    setTimeout(() => {
-                        countdownDiv.innerHTML = '';
-                        startGame();
-                    }, 500);
-                }
-            }
-            
-            function startGame() {
-                gameRunning = true;
-                updateGameStats();
-                generateFood();
-                gameLoop();
-            }
-            
-            // Остальная логика змейки остается прежней...
-            // (Для экономии места оставляю как есть)
-            
-            function generateFood() {
-                food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
-                food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
-                
-                snake.forEach(segment => {
-                    if (segment.x === food.x && segment.y === food.y) {
-                        generateFood();
-                    }
-                });
-            }
-            
-            function updateGameStats() {
-                if (!gameRunning) return;
-                
-                const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
-                const minutes = Math.floor(gameTime / 60);
-                const seconds = gameTime % 60;
-                document.getElementById('gameTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                
-                const timeSinceTrack = Math.floor((Date.now() - lastTrackTime) / 1000);
-                const timeToTrack = Math.max(0, 60 - timeSinceTrack);
-                document.getElementById('timeToTrack').textContent = `${timeToTrack}s`;
-                
-                document.getElementById('gameLevel').textContent = Math.floor(snake.length / 5) + 1;
-                document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
-                
-                if (timeSinceTrack >= 60) {
-                    const randomTrack = getRandomTrack();
-                    const isNewTrack = !unlockedTracks.includes(randomTrack.id);
-                    
-                    if (isNewTrack) {
-                        unlockedTracks.push(randomTrack.id);
-                        updateTracksCount();
-                    }
-                    
-                    showTrackPopup(randomTrack, isNewTrack);
-                    lastTrackTime = Date.now();
-                }
-                
-                setTimeout(updateGameStats, 1000);
-            }
-            
-            function gameLoop() {
-                if (!gameRunning || gamePaused) {
-                    if (gameRunning && !gamePaused) {
-                        setTimeout(gameLoop, 150);
-                    }
-                    return;
-                }
-                
-                const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
-                
-                if (head.x < 0) head.x = canvas.width - gridSize;
-                if (head.x >= canvas.width) head.x = 0;
-                if (head.y < 0) head.y = canvas.height - gridSize;
-                if (head.y >= canvas.height) head.y = 0;
-                
-                snake.forEach(segment => {
-                    if (head.x === segment.x && head.y === segment.y) {
-                        gameRunning = false;
-                        updateScore(gameScore);
-                        document.getElementById('gameOverDiv').style.display = 'block';
-                        document.getElementById('gameInstructions').textContent = 
-                            `Игра окончена! Длина змейки: ${snake.length}, очки: ${gameScore}`;
-                        return;
-                    }
-                });
-                
-                if (!gameRunning) return;
-                
-                snake.unshift(head);
-                
-                if (head.x === food.x && head.y === food.y) {
-                    gameScore += 10;
-                    generateFood();
-                    tg.HapticFeedback.impactOccurred('light');
-                } else {
-                    snake.pop();
-                }
-                
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                snake.forEach((segment, index) => {
-                    ctx.fillStyle = index === 0 ? '#4ecdc4' : '#44a08d';
-                    ctx.fillRect(segment.x, segment.y, gridSize - 2, gridSize - 2);
-                });
-                
-                ctx.fillStyle = '#ff6b6b';
-                ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
-                
-                setTimeout(gameLoop, Math.max(50, 200 - snake.length * 2));
-            }
-            
-            // Управление змейкой
-            document.addEventListener('keydown', handleKeyPress);
-            canvas.addEventListener('touchstart', handleTouchStart);
-            canvas.addEventListener('touchmove', handleTouchMove);
-            
-            let touchStartX = 0;
-            let touchStartY = 0;
-            
-            function handleTouchStart(e) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            }
-            
-            function handleTouchMove(e) {
-                if (!gameRunning || gamePaused) return;
-                e.preventDefault();
-                
-                const touchEndX = e.touches[0].clientX;
-                const touchEndY = e.touches[0].clientY;
-                
-                const deltaX = touchEndX - touchStartX;
-                const deltaY = touchEndY - touchStartY;
-                
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    if (deltaX > 0 && direction.x === 0) {
-                        direction = { x: gridSize, y: 0 };
-                    } else if (deltaX < 0 && direction.x === 0) {
-                        direction = { x: -gridSize, y: 0 };
-                    }
-                } else {
-                    if (deltaY > 0 && direction.y === 0) {
-                        direction = { x: 0, y: gridSize };
-                    } else if (deltaY < 0 && direction.y === 0) {
-                        direction = { x: 0, y: -gridSize };
-                    }
-                }
-            }
-            
-            function handleKeyPress(e) {
-                if (!gameRunning || gamePaused) return;
-                
-                switch(e.key) {
-                    case 'ArrowUp':
-                        if (direction.y === 0) direction = { x: 0, y: -gridSize };
-                        break;
-                    case 'ArrowDown':
-                        if (direction.y === 0) direction = { x: 0, y: gridSize };
-                        break;
-                    case 'ArrowLeft':
-                        if (direction.x === 0) direction = { x: -gridSize, y: 0 };
-                        break;
-                    case 'ArrowRight':
-                        if (direction.x === 0) direction = { x: gridSize, y: 0 };
-                        break;
-                }
             }
         }
         
