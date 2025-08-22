@@ -1,3 +1,8 @@
+Отличные идеи! Сделаем крутой арканоид с системой треков Kizaru. Вот обновленный код:
+
+## **ОБНОВЛЕННЫЙ `index.html` С УЛУЧШЕННЫМ АРКАНОИДОМ**
+
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -160,6 +165,7 @@
             border-radius: 10px;
             background: #000;
             margin: 10px 0;
+            position: relative;
         }
         
         .game-score {
@@ -173,6 +179,91 @@
             color: #aaa;
             font-size: 14px;
             margin: 10px 0;
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        /* ТАЙМЕР ПОДГОТОВКИ */
+        .countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 0 0 20px #ff6b6b;
+            animation: pulse 1s ease-in-out;
+            z-index: 10;
+        }
+        
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        /* КНОПКА ПЕРЕЗАПУСКА */
+        .restart-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* ВСПЛЫВАЮЩЕЕ ОКНО ТРЕКА */
+        .track-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 3px solid #4ecdc4;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            z-index: 2000;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            animation: popupAppear 0.5s ease-out;
+        }
+        
+        @keyframes popupAppear {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .track-popup h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .track-name {
+            color: #ff6b6b;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .track-artist {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
         }
         
         /* МУЗЫКАЛЬНАЯ КОЛЛЕКЦИЯ */
@@ -209,12 +300,12 @@
             flex: 1;
         }
         
-        .track-name {
+        .track-title {
             font-weight: bold;
             margin-bottom: 5px;
         }
         
-        .track-unlock {
+        .track-details {
             font-size: 12px;
             color: #888;
         }
@@ -239,16 +330,6 @@
             cursor: not-allowed;
             transform: none;
         }
-        
-        .unlock-animation {
-            animation: unlockPulse 1s ease-in-out;
-        }
-        
-        @keyframes unlockPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); background: rgba(78, 205, 196, 0.3); }
-            100% { transform: scale(1); }
-        }
     </style>
 </head>
 <body>
@@ -258,7 +339,7 @@
         
         <div class="score-section">
             <div class="score">Очки: <span id="scoreDisplay">0</span></div>
-            <div style="color: #888; font-size: 12px;">Треков разблокировано: <span id="tracksCount">1</span>/5</div>
+            <div style="color: #888; font-size: 12px;">Треков разблокировано: <span id="tracksCount">0</span>/15</div>
         </div>
         
         <div class="games-section">
@@ -286,9 +367,20 @@
             </div>
             <div class="modal-body">
                 <div class="game-score" id="currentGameScore">Очки: 0</div>
-                <canvas id="gameCanvas" width="350" height="280"></canvas>
+                <div class="game-stats">
+                    <span>Уровень: <span id="gameLevel">1</span></span>
+                    <span>Время: <span id="gameTime">0:00</span></span>
+                    <span>До трека: <span id="timeToTrack">60s</span></span>
+                </div>
+                <div style="position: relative;">
+                    <canvas id="gameCanvas" width="350" height="280"></canvas>
+                    <div id="countdownDiv"></div>
+                </div>
                 <div class="game-instructions" id="gameInstructions">
                     Нажмите по экрану для управления
+                </div>
+                <div id="gameOverDiv" style="display: none;">
+                    <button class="restart-btn" onclick="startArkanoidGame()">🔄 Начать заново</button>
                 </div>
             </div>
         </div>
@@ -298,7 +390,7 @@
     <div id="musicModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">🎵 Музыкальная коллекция</h2>
+                <h2 class="modal-title">🎵 Альбом: Karmageddon</h2>
                 <button class="close" onclick="closeMusicModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -316,43 +408,35 @@
         
         // Игровые переменные
         let userScore = 0;
-        let unlockedTracks = ['track0'];
+        let unlockedTracks = [];
         let currentGame = null;
         let gameRunning = false;
+        let gamePaused = false;
         
-        // Все треки
-        const allTracks = [
-            { id: 'track0', name: '🎵 Звуки начала', description: 'Стартовая мелодия', unlockScore: 0 },
-            { id: 'track1', name: '🔴 Арканоид Бит', description: 'Ритм разрушения', unlockScore: 50 },
-            { id: 'track2', name: '🐍 Змеиный Джаз', description: 'Плавные изгибы', unlockScore: 100 },
-            { id: 'track3', name: '🏃 Скорость Света', description: 'Энергия движения', unlockScore: 200 },
-            { id: 'track4', name: '👑 Мастер Звука', description: 'Трек чемпиона', unlockScore: 400 }
+        // Альбом Karmageddon - Kizaru
+        const karmageddonTracks = [
+            { id: 'track1', title: 'Карма', artist: 'Kizaru', description: 'Открывающий трек альбома' },
+            { id: 'track2', title: 'Делюкс', artist: 'Kizaru', description: 'Роскошный звук' },
+            { id: 'track3', title: 'Лайт', artist: 'Kizaru', description: 'Легкий флоу' },
+            { id: 'track4', title: 'Взлет', artist: 'Kizaru', description: 'На пике формы' },
+            { id: 'track5', title: 'Дисквалификация', artist: 'Kizaru', description: 'Мощный панч' },
+            { id: 'track6', title: 'Кризис', artist: 'Kizaru', description: 'Темная тема' },
+            { id: 'track7', title: 'Понедельник', artist: 'Kizaru', description: 'Начало недели' },
+            { id: 'track8', title: 'Карамель', artist: 'Kizaru', description: 'Сладкий хит' },
+            { id: 'track9', title: 'Диалог', artist: 'Kizaru', description: 'Разговор с собой' },
+            { id: 'track10', title: 'Карьера', artist: 'Kizaru', description: 'Путь к успеху' },
+            { id: 'track11', title: 'Шрамы', artist: 'Kizaru', description: 'Следы прошлого' },
+            { id: 'track12', title: 'Последний раз', artist: 'Kizaru', description: 'Финальный аккорд' },
+            { id: 'track13', title: 'Кэш', artist: 'Kizaru', description: 'О деньгах' },
+            { id: 'track14', title: 'Рапитура', artist: 'Kizaru', description: 'Чистый рэп' },
+            { id: 'track15', title: 'Время 15:15', artist: 'Kizaru', description: 'Магическое время' }
         ];
         
         // Обновление счета
         function updateScore(points) {
             userScore += points;
             document.getElementById('scoreDisplay').textContent = userScore;
-            checkUnlockTracks();
             updateTracksCount();
-        }
-        
-        // Проверка новых треков
-        function checkUnlockTracks() {
-            allTracks.forEach(track => {
-                if (userScore >= track.unlockScore && !unlockedTracks.includes(track.id)) {
-                    unlockedTracks.push(track.id);
-                    
-                    // Анимация разблокировки
-                    setTimeout(() => {
-                        tg.showPopup({
-                            title: '🎵 Новый трек разблокирован!',
-                            message: `${track.name}\n"${track.description}"`,
-                            buttons: [{id: 'ok', type: 'ok', text: 'Прослушать!'}]
-                        });
-                    }, 500);
-                }
-            });
         }
         
         // Обновление счетчика треков
@@ -375,6 +459,7 @@
             modal.style.display = 'block';
             
             if (gameType === 'arkanoid') {
+                document.getElementById('gameOverDiv').style.display = 'none';
                 startArkanoidGame();
             } else {
                 document.getElementById('gameInstructions').textContent = 
@@ -385,6 +470,7 @@
         // Закрытие игрового модального окна
         function closeGameModal() {
             gameRunning = false;
+            gamePaused = false;
             currentGame = null;
             document.getElementById('gameModal').style.display = 'none';
             
@@ -392,6 +478,9 @@
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Очистка таймера
+            document.getElementById('countdownDiv').innerHTML = '';
         }
         
         // Открытие музыкального модального окна
@@ -411,22 +500,22 @@
             const tracksList = document.getElementById('tracksList');
             let tracksHTML = '';
             
-            allTracks.forEach(track => {
+            karmageddonTracks.forEach(track => {
                 const isUnlocked = unlockedTracks.includes(track.id);
                 const lockIcon = isUnlocked ? '🔓' : '🔒';
                 const trackClass = isUnlocked ? '' : 'locked';
                 
                 tracksHTML += `
-                    <div class="track-item ${trackClass}" id="track-${track.id}">
+                    <div class="track-item ${trackClass}">
                         <div class="track-info">
-                            <div class="track-name">${lockIcon} ${track.name}</div>
-                            <div class="track-unlock">
-                                ${isUnlocked ? track.description : `Нужно очков: ${track.unlockScore}`}
+                            <div class="track-title">${lockIcon} ${track.title}</div>
+                            <div class="track-details">
+                                ${track.artist}${isUnlocked ? ' • ' + track.description : ' • Заблокировано'}
                             </div>
                         </div>
                         <button class="play-btn" 
                                 ${!isUnlocked ? 'disabled' : ''} 
-                                onclick="playTrack('${track.id}', '${track.name}')">
+                                onclick="playTrack('${track.id}', '${track.title}', '${track.artist}')">
                             ${isUnlocked ? '▶️' : '🔒'}
                         </button>
                     </div>
@@ -437,36 +526,119 @@
         }
         
         // Воспроизведение трека
-        function playTrack(trackId, trackName) {
+        function playTrack(trackId, trackTitle, trackArtist) {
             tg.HapticFeedback.impactOccurred('light');
-            tg.showAlert(`🎵 Сейчас играет: ${trackName}`);
+            tg.showAlert(`🎵 Сейчас играет:\n${trackTitle} - ${trackArtist}`);
         }
         
-        // АРКАНОИД ИГРА
+        // Показать всплывающее окно трека
+        function showTrackPopup(track, isNew) {
+            gamePaused = true;
+            
+            const popup = document.createElement('div');
+            popup.className = 'track-popup';
+            popup.innerHTML = `
+                <h3>${isNew ? '🎉 Поздравляю!' : '📀 Трек уже есть'}</h3>
+                <div style="font-size: 48px; margin: 20px 0;">💿</div>
+                <div class="track-name">${track.title}</div>
+                <div class="track-artist">${track.artist}</div>
+                <p style="color: #aaa; margin: 15px 0;">
+                    ${isNew ? 'Ты выбил новый трек!' : 'Этот трек у тебя уже есть.'}
+                </p>
+                <button class="restart-btn" onclick="closeTrackPopup(this)" style="margin-top: 20px;">
+                    Продолжить игру
+                </button>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            if (isNew) {
+                tg.HapticFeedback.impactOccurred('heavy');
+            } else {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+        
+        // Закрыть всплывающее окно трека
+        function closeTrackPopup(button) {
+            button.parentElement.remove();
+            gamePaused = false;
+        }
+        
+        // АРКАНОИД ИГРА (УЛУЧШЕННАЯ ВЕРСИЯ)
         function startArkanoidGame() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
-            const scoreDisplay = document.getElementById('currentGameScore');
             
-            gameRunning = true;
+            // Сброс UI
+            document.getElementById('gameOverDiv').style.display = 'none';
+            document.getElementById('gameInstructions').textContent = 'Приготовься...';
+            
+            // Игровые переменные
             let gameScore = 0;
+            let gameLevel = 1;
+            let gameStartTime = Date.now();
+            let lastTrackTime = Date.now();
+            let ballSpeed = 3;
             
-            // Игровые объекты
-            let ball = { x: 175, y: 140, dx: 3, dy: 3, radius: 8 };
+            // Объекты игры
+            let ball = { x: 175, y: 200, dx: 0, dy: 0, radius: 8 };
             let paddle = { x: 150, y: 250, width: 60, height: 10 };
             let blocks = [];
+            let vinylRecord = null; // Музыкальная пластинка
             
-            // Создание блоков
-            for (let i = 0; i < 7; i++) {
-                for (let j = 0; j < 4; j++) {
-                    blocks.push({
-                        x: i * 48 + 10,
-                        y: j * 25 + 30,
-                        width: 45,
-                        height: 20,
-                        active: true,
-                        color: `hsl(${(i * j * 30) % 360}, 70%, 60%)`
-                    });
+            gameRunning = false; // Пока не началась
+            gamePaused = false;
+            
+            // Таймер подготовки 3 секунды
+            let countdown = 3;
+            showCountdown();
+            
+            function showCountdown() {
+                const countdownDiv = document.getElementById('countdownDiv');
+                
+                if (countdown > 0) {
+                    countdownDiv.innerHTML = `<div class="countdown">${countdown}</div>`;
+                    countdown--;
+                    setTimeout(showCountdown, 1000);
+                } else {
+                    countdownDiv.innerHTML = `<div class="countdown">GO!</div>`;
+                    setTimeout(() => {
+                        countdownDiv.innerHTML = '';
+                        startGame();
+                    }, 500);
+                }
+            }
+            
+            function startGame() {
+                gameRunning = true;
+                
+                // Мяч летит от игрока (вверх и в сторону)
+                ball.dx = (Math.random() > 0.5 ? 1 : -1) * ballSpeed;
+                ball.dy = -ballSpeed; // Вверх
+                
+                generateBlocks();
+                gameLoop();
+                updateGameStats();
+            }
+            
+            // Генерация блоков для уровня
+            function generateBlocks() {
+                blocks = [];
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'];
+                
+                for (let i = 0; i < 7; i++) {
+                    for (let j = 0; j < Math.min(3 + Math.floor(gameLevel / 2), 6); j++) {
+                        blocks.push({
+                            x: i * 48 + 10,
+                            y: j * 25 + 30,
+                            width: 45,
+                            height: 20,
+                            active: true,
+                            color: colors[j % colors.length],
+                            hits: gameLevel > 3 ? 2 : 1 // Прочные блоки на высоких уровнях
+                        });
+                    }
                 }
             }
             
@@ -475,6 +647,7 @@
             canvas.addEventListener('touchmove', movePaddle);
             
             function movePaddle(e) {
+                if (!gameRunning || gamePaused) return;
                 e.preventDefault();
                 const rect = canvas.getBoundingClientRect();
                 const x = e.touches ? e.touches[0].clientX : e.clientX;
@@ -482,9 +655,53 @@
                 paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
             }
             
+            // Обновление статистики игры
+            function updateGameStats() {
+                if (!gameRunning) return;
+                
+                const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                const minutes = Math.floor(gameTime / 60);
+                const seconds = gameTime % 60;
+                document.getElementById('gameTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                const timeSinceTrack = Math.floor((Date.now() - lastTrackTime) / 1000);
+                const timeToTrack = Math.max(0, 60 - timeSinceTrack);
+                document.getElementById('timeToTrack').textContent = `${timeToTrack}s`;
+                
+                document.getElementById('gameLevel').textContent = gameLevel;
+                document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
+                
+                // Проверка времени для пластинки
+                if (timeSinceTrack >= 60 && !vinylRecord) {
+                    createVinylRecord();
+                }
+                
+                setTimeout(updateGameStats, 1000);
+            }
+            
+            // Создание летающей пластинки
+            function createVinylRecord() {
+                vinylRecord = {
+                    x: Math.random() * (canvas.width - 40) + 20,
+                    y: 50,
+                    dx: (Math.random() - 0.5) * 2,
+                    dy: 1,
+                    radius: 20,
+                    timeLeft: 5000, // 5 секунд
+                    rotation: 0
+                };
+                
+                tg.showAlert('💿 Пластинка появилась! Попади в неё за 5 секунд!');
+            }
+            
             // Игровой цикл
             function gameLoop() {
-                if (!gameRunning) return;
+                if (!gameRunning || gamePaused) {
+                    if (gameRunning && !gamePaused) {
+                        requestAnimationFrame(gameLoop);
+                    }
+                    return;
+                }
                 
                 // Очистка
                 ctx.fillStyle = '#000';
@@ -507,7 +724,11 @@
                     ball.x > paddle.x && 
                     ball.x < paddle.x + paddle.width &&
                     ball.dy > 0) {
-                    ball.dy = -ball.dy;
+                    
+                    // Изменяем угол в зависимости от места попадания
+                    const hitPos = (ball.x - paddle.x) / paddle.width;
+                    ball.dx = (hitPos - 0.5) * ballSpeed * 2;
+                    ball.dy = -Math.abs(ball.dy);
                     ball.y = paddle.y - ball.radius;
                     tg.HapticFeedback.impactOccurred('light');
                 }
@@ -516,7 +737,9 @@
                 if (ball.y > canvas.height) {
                     gameRunning = false;
                     updateScore(gameScore);
-                    tg.showAlert(`Игра окончена!\nВы набрали: ${gameScore} очков`);
+                    document.getElementById('gameOverDiv').style.display = 'block';
+                    document.getElementById('gameInstructions').textContent = 
+                        `Игра окончена! Вы набрали ${gameScore} очков и дошли до ${gameLevel} уровня.`;
                     return;
                 }
                 
@@ -527,24 +750,81 @@
                         ball.x + ball.radius > block.x &&
                         ball.y - ball.radius < block.y + block.height &&
                         ball.y + ball.radius > block.y) {
-                        block.active = false;
+                        
+                        block.hits--;
+                        if (block.hits <= 0) {
+                            block.active = false;
+                        } else {
+                            // Меняем цвет поврежденного блока
+                            block.color = '#888';
+                        }
+                        
                         ball.dy = -ball.dy;
                         gameScore += 10;
-                        scoreDisplay.textContent = `Очки: ${gameScore}`;
                         tg.HapticFeedback.impactOccurred('medium');
                     }
                 });
                 
-                // Победа
-                if (blocks.every(block => !block.active)) {
-                    gameRunning = false;
-                    gameScore += 100;
-                    updateScore(gameScore);
-                    tg.showAlert(`🎉 ПОБЕДА!\nБонус: 100 очков\nИтого: ${gameScore} очков`);
-                    return;
+                // Движение пластинки
+                if (vinylRecord) {
+                    vinylRecord.x += vinylRecord.dx;
+                    vinylRecord.y += vinylRecord.dy;
+                    vinylRecord.rotation += 0.1;
+                    vinylRecord.timeLeft -= 16; // ~60fps
+                    
+                    // Отскок пластинки от стен
+                    if (vinylRecord.x <= vinylRecord.radius || vinylRecord.x >= canvas.width - vinylRecord.radius) {
+                        vinylRecord.dx = -vinylRecord.dx;
+                    }
+                    
+                    // Коллизия мяча с пластинкой
+                    const dx = ball.x - vinylRecord.x;
+                    const dy = ball.y - vinylRecord.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < ball.radius + vinylRecord.radius) {
+                        // Попали в пластинку!
+                        const randomTrack = karmageddonTracks[Math.floor(Math.random() * karmageddonTracks.length)];
+                        const isNewTrack = !unlockedTracks.includes(randomTrack.id);
+                        
+                        if (isNewTrack) {
+                            unlockedTracks.push(randomTrack.id);
+                            updateTracksCount();
+                        }
+                        
+                        showTrackPopup(randomTrack, isNewTrack);
+                        
+                        vinylRecord = null;
+                        lastTrackTime = Date.now();
+                        gameScore += 50; // Бонус за пластинку
+                    }
+                    
+                    // Пластинка исчезает через 5 секунд
+                    if (vinylRecord && vinylRecord.timeLeft <= 0) {
+                        vinylRecord = null;
+                        lastTrackTime = Date.now();
+                        tg.showAlert('💿 Пластинка исчезла!');
+                    }
                 }
                 
-                // Рисование
+                // Переход на следующий уровень
+                if (blocks.every(block => !block.active)) {
+                    gameLevel++;
+                    ballSpeed += 0.5; // Увеличиваем скорость
+                    generateBlocks();
+                    
+                    // Возвращаем мяч в центр
+                    ball.x = 175;
+                    ball.y = 200;
+                    ball.dx = (Math.random() > 0.5 ? 1 : -1) * ballSpeed;
+                    ball.dy = -ballSpeed;
+                    
+                    gameScore += 100; // Бонус за уровень
+                    tg.showAlert(`🎉 Уровень ${gameLevel}!\nБонус: 100 очков`);
+                }
+                
+                // РИСОВАНИЕ
+                
                 // Мяч
                 ctx.fillStyle = '#ff4444';
                 ctx.beginPath();
@@ -566,13 +846,58 @@
                         ctx.strokeStyle = '#fff';
                         ctx.lineWidth = 1;
                         ctx.strokeRect(block.x, block.y, block.width, block.height);
+                        
+                        // Показываем количество ударов для прочных блоков
+                        if (block.hits > 1) {
+                            ctx.fillStyle = '#fff';
+                            ctx.font = '12px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(block.hits, block.x + block.width/2, block.y + block.height/2 + 4);
+                        }
                     }
                 });
                 
+                // Пластинка
+                if (vinylRecord) {
+                    ctx.save();
+                    ctx.translate(vinylRecord.x, vinylRecord.y);
+                    ctx.rotate(vinylRecord.rotation);
+                    
+                    // Рисуем пластинку
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, vinylRecord.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#4ecdc4';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    
+                    // Центральная дырка
+                    ctx.fillStyle = '#4ecdc4';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Полоски
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 8 + i * 4, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    
+                    ctx.restore();
+                    
+                    // Таймер пластинки
+                    const timeLeft = Math.ceil(vinylRecord.timeLeft / 1000);
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(timeLeft, vinylRecord.x, vinylRecord.y - 30);
+                }
+                
                 requestAnimationFrame(gameLoop);
             }
-            
-            gameLoop();
         }
         
         // Закрытие модальных окон по клику вне их
@@ -593,3 +918,39 @@
     </script>
 </body>
 </html>
+```
+
+## **ЧТО ИЗМЕНИЛОСЬ:**
+
+### **✅ Таймер подготовки:**
+- 3 секунды обратного отсчета с анимацией
+- Красивые всплывающие цифры
+
+### **✅ Улучшенная механика мяча:**
+- Мяч летит ОТ игрока (вверх)
+- Угол отскока зависит от места попадания по платформе
+
+### **✅ Система рестарта:**
+- После поражения кнопка "🔄 Начать заново"
+- Сохраняется набранный счет
+
+### **✅ Бесконечная игра:**
+- Каждый уровень усложняется
+- Больше блоков, быстрее мяч
+- Прочные блоки на высоких уровнях
+
+### **✅ Система треков:**
+- Каждую минуту появляется летающая пластинка 💿
+- 5 секунд чтобы попасть
+- Может выпасть повторный трек
+
+### **✅ Всплывающие окна:**
+- "Поздравляю! Ты выбил новый трек!"
+- "Этот трек у тебя уже есть"
+- Игра ставится на паузу
+
+### **✅ Треклист Karmageddon:**
+- 15 треков Kizaru
+- Названия, исполнитель, описания
+
+**Теперь это полноценный музыкальный арканоид! 🎵🔴**
