@@ -825,35 +825,44 @@
             document.getElementById('activeAlbum').textContent = `📀 ${albums[selectedAlbum].name}`;
         }
         
-        // Выбор альбома
-        function selectAlbum(albumId) {
-            selectedAlbum = albumId;
-            
-            // Обновляем кнопки
-            document.querySelectorAll('.album-btn').forEach(btn => btn.classList.remove('active'));
-            if (albumId === 'karmageddon') {
-                document.getElementById('albumBtn1').classList.add('active');
-            } else {
-                document.getElementById('albumBtn2').classList.add('active');
-            }
-            
-            // Обновляем обложку
-            const album = albums[albumId];
-            const albumCover = document.getElementById('albumCover');
-            albumCover.className = `album-cover ${album.coverClass}`;
-            albumCover.textContent = album.coverIcon;
-            
-            // Обновляем информацию об альбоме
-            document.getElementById('albumInfo').textContent = 
-                `${album.tracks.length} треков • Альбом ${album.year}`;
-            
-            document.getElementById('musicModalTitle').textContent = `📀 ${album.name}`;
-            
-            updateActiveAlbum();
-            updateMusicList();
-            saveProgress();
-        }
-        
+     // Выбор альбома (обновленная функция)
+function selectAlbum(albumId) {
+    selectedAlbum = albumId;
+    
+    // Обновляем кнопки
+    document.querySelectorAll('.album-btn').forEach(btn => btn.classList.remove('active'));
+    if (albumId === 'karmageddon') {
+        document.getElementById('albumBtn1').classList.add('active');
+    } else {
+        document.getElementById('albumBtn2').classList.add('active');
+    }
+    
+    // Обновляем обложку
+    const album = albums[albumId];
+    const albumCover = document.getElementById('albumCover');
+    albumCover.className = `album-cover ${album.coverClass}`;
+    
+    // Создаем структуру с иконкой
+    albumCover.innerHTML = `<span class="album-cover-icon">${album.coverIcon}</span>`;
+    
+    // Устанавливаем изображение через стиль с вашего GitHub
+    const coverUrls = {
+        'karmageddon': 'https://raw.githubusercontent.com/dealphonics/game-app/main/karmageddon_cover.jpg',
+        'psychi': 'https://raw.githubusercontent.com/dealphonics/game-app/main/psychi_cover.jpg'
+    };
+    
+    albumCover.style.backgroundImage = `url('${coverUrls[albumId]}')`;
+    
+    // Обновляем информацию об альбоме
+    document.getElementById('albumInfo').textContent = 
+        `${album.tracks.length} треков • Альбом ${album.year}`;
+    
+    document.getElementById('musicModalTitle').textContent = `📀 ${album.name}`;
+    
+    updateActiveAlbum();
+    updateMusicList();
+    saveProgress();
+}
         // Открытие игрового модального окна
         function openGameModal(gameType) {
             currentGameType = gameType;
@@ -1401,5 +1410,6 @@
     </script>
 </body>
 </html>
+
 
 
