@@ -18,16 +18,16 @@
             font-family: 'Arial', sans-serif;
             text-align: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
         }
         
         .container {
-            max-width: 400px;
+            max-width: 350px;
             margin: 0 auto;
         }
         
         .logo {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
             background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
             background-clip: text;
@@ -38,32 +38,32 @@
         
         .subtitle {
             color: #888;
-            font-size: 14px;
-            margin-bottom: 30px;
+            font-size: 12px;
+            margin-bottom: 20px;
         }
         
         .score-section {
             background: rgba(255,255,255,0.1);
             border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 30px;
+            padding: 12px;
+            margin-bottom: 20px;
             border: 1px solid #4ecdc4;
         }
         
         .score {
             color: #4ecdc4;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
         }
         
         .game-button {
             background: linear-gradient(45deg, #ff6b6b, #ff8e53);
             color: white;
-            padding: 18px 20px;
-            margin: 10px 0;
+            padding: 15px 20px;
+            margin: 8px 0;
             border: none;
             border-radius: 20px;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             width: 100%;
             transition: all 0.3s;
@@ -72,21 +72,13 @@
         }
         
         .game-button:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
-        }
-        
-        .game-button:active {
-            transform: translateY(0);
         }
         
         .music-button {
             background: linear-gradient(45deg, #4ecdc4, #44a08d);
             box-shadow: 0 6px 20px rgba(78, 205, 196, 0.3);
-        }
-        
-        .music-button:hover {
-            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
         }
         
         /* МОДАЛЬНЫЕ ОКНА */
@@ -98,17 +90,17 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.9);
             backdrop-filter: blur(5px);
         }
         
         .modal-content {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
-            margin: 5% auto;
+            margin: 2% auto;
             padding: 0;
             border-radius: 20px;
-            width: 95%;
-            max-width: 500px;
+            width: 98%;
+            max-width: 400px;
             border: 2px solid #4ecdc4;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             position: relative;
@@ -117,14 +109,14 @@
         
         .modal-header {
             background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            padding: 15px 20px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .modal-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             margin: 0;
         }
@@ -133,10 +125,10 @@
             background: none;
             border: none;
             color: white;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
-            padding: 0;
+            padding: 5px;
             width: 30px;
             height: 30px;
             display: flex;
@@ -151,7 +143,7 @@
         }
         
         .modal-body {
-            padding: 20px;
+            padding: 15px;
             text-align: center;
         }
         
@@ -160,28 +152,29 @@
             border-radius: 10px;
             background: #000;
             margin: 10px 0;
-            position: relative;
+            max-width: 100%;
+            height: auto;
         }
         
         .game-score {
             color: #4ecdc4;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 10px 0;
-        }
-        
-        .game-instructions {
-            color: #aaa;
-            font-size: 14px;
-            margin: 10px 0;
+            margin: 8px 0;
         }
         
         .game-stats {
             display: flex;
             justify-content: space-around;
-            margin: 10px 0;
-            font-size: 12px;
+            margin: 8px 0;
+            font-size: 11px;
             color: #888;
+        }
+        
+        .game-instructions {
+            color: #aaa;
+            font-size: 12px;
+            margin: 8px 0;
         }
         
         /* ТАЙМЕР ПОДГОТОВКИ */
@@ -190,7 +183,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 72px;
+            font-size: 60px;
             font-weight: bold;
             color: #ff6b6b;
             text-shadow: 0 0 20px #ff6b6b;
@@ -208,12 +201,12 @@
         .restart-btn {
             background: linear-gradient(45deg, #ff6b6b, #ff8e53);
             color: white;
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
             border-radius: 15px;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
-            margin: 10px;
+            margin: 8px;
             transition: all 0.3s;
         }
         
@@ -230,11 +223,12 @@
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             border: 3px solid #4ecdc4;
             border-radius: 20px;
-            padding: 30px;
+            padding: 25px;
             text-align: center;
             z-index: 2000;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
             animation: popupAppear 0.5s ease-out;
+            max-width: 300px;
         }
         
         @keyframes popupAppear {
@@ -245,35 +239,47 @@
         .track-popup h3 {
             color: #4ecdc4;
             margin-bottom: 15px;
-            font-size: 20px;
+            font-size: 18px;
         }
         
         .track-name {
-            color: #ff6b6b;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             margin: 10px 0;
         }
         
         .track-artist {
             color: #888;
-            font-size: 14px;
-            margin-bottom: 20px;
+            font-size: 12px;
+            margin-bottom: 15px;
         }
+        
+        .rarity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .rarity-common { background: #4CAF50; color: white; }
+        .rarity-rare { background: #2196F3; color: white; }
+        .rarity-epic { background: #9C27B0; color: white; }
+        .rarity-legendary { background: #FF9800; color: white; }
         
         /* МУЗЫКАЛЬНАЯ КОЛЛЕКЦИЯ */
         .tracks-container {
             text-align: left;
-            max-height: 300px;
+            max-height: 250px;
             overflow-y: auto;
         }
         
         .track-item {
             background: rgba(255,255,255,0.1);
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 15px;
-            border-left: 4px solid #4ecdc4;
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -282,12 +288,11 @@
         
         .track-item:hover {
             background: rgba(255,255,255,0.15);
-            transform: translateX(5px);
+            transform: translateX(3px);
         }
         
         .track-item.locked {
             background: rgba(255,255,255,0.05);
-            border-left-color: #666;
             color: #666;
         }
         
@@ -297,11 +302,12 @@
         
         .track-title {
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
+            font-size: 14px;
         }
         
         .track-details {
-            font-size: 12px;
+            font-size: 10px;
             color: #888;
         }
         
@@ -309,15 +315,15 @@
             background: linear-gradient(45deg, #4ecdc4, #44a08d);
             border: none;
             color: white;
-            padding: 10px 15px;
-            border-radius: 20px;
+            padding: 8px 12px;
+            border-radius: 15px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             transition: all 0.3s;
         }
         
         .play-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
         
         .play-btn:disabled {
@@ -334,7 +340,7 @@
         
         <div class="score-section">
             <div class="score">Очки: <span id="scoreDisplay">0</span></div>
-            <div style="color: #888; font-size: 12px;">Треков разблокировано: <span id="tracksCount">0</span>/15</div>
+            <div style="color: #888; font-size: 10px;">Треков разблокировано: <span id="tracksCount">0</span>/15</div>
         </div>
         
         <div class="games-section">
@@ -368,14 +374,14 @@
                     <span>До трека: <span id="timeToTrack">60s</span></span>
                 </div>
                 <div style="position: relative;">
-                    <canvas id="gameCanvas" width="350" height="280"></canvas>
+                    <canvas id="gameCanvas" width="320" height="240"></canvas>
                     <div id="countdownDiv"></div>
                 </div>
                 <div class="game-instructions" id="gameInstructions">
                     Нажмите по экрану для управления
                 </div>
                 <div id="gameOverDiv" style="display: none;">
-                    <button class="restart-btn" onclick="startArkanoidGame()">🔄 Начать заново</button>
+                    <button class="restart-btn" onclick="restartCurrentGame()">🔄 Начать заново</button>
                 </div>
             </div>
         </div>
@@ -404,28 +410,78 @@
         // Игровые переменные
         let userScore = 0;
         let unlockedTracks = [];
-        let currentGame = null;
+        let currentGameType = null;
         let gameRunning = false;
         let gamePaused = false;
         
-        // Альбом Karmageddon - Kizaru
+        // Альбом Karmageddon с редкостью
         const karmageddonTracks = [
-            { id: 'track1', title: 'Карма', artist: 'Kizaru', description: 'Открывающий трек альбома' },
-            { id: 'track2', title: 'Делюкс', artist: 'Kizaru', description: 'Роскошный звук' },
-            { id: 'track3', title: 'Лайт', artist: 'Kizaru', description: 'Легкий флоу' },
-            { id: 'track4', title: 'Взлет', artist: 'Kizaru', description: 'На пике формы' },
-            { id: 'track5', title: 'Дисквалификация', artist: 'Kizaru', description: 'Мощный панч' },
-            { id: 'track6', title: 'Кризис', artist: 'Kizaru', description: 'Темная тема' },
-            { id: 'track7', title: 'Понедельник', artist: 'Kizaru', description: 'Начало недели' },
-            { id: 'track8', title: 'Карамель', artist: 'Kizaru', description: 'Сладкий хит' },
-            { id: 'track9', title: 'Диалог', artist: 'Kizaru', description: 'Разговор с собой' },
-            { id: 'track10', title: 'Карьера', artist: 'Kizaru', description: 'Путь к успеху' },
-            { id: 'track11', title: 'Шрамы', artist: 'Kizaru', description: 'Следы прошлого' },
-            { id: 'track12', title: 'Последний раз', artist: 'Kizaru', description: 'Финальный аккорд' },
-            { id: 'track13', title: 'Кэш', artist: 'Kizaru', description: 'О деньгах' },
-            { id: 'track14', title: 'Рапитура', artist: 'Kizaru', description: 'Чистый рэп' },
-            { id: 'track15', title: 'Время 15:15', artist: 'Kizaru', description: 'Магическое время' }
+            // Обычные (65%)
+            { id: 'track1', title: 'Карма', artist: 'Kizaru', rarity: 'common', description: 'Открывающий трек альбома' },
+            { id: 'track2', title: 'Делюкс', artist: 'Kizaru', rarity: 'common', description: 'Роскошный звук' },
+            { id: 'track3', title: 'Лайт', artist: 'Kizaru', rarity: 'common', description: 'Легкий флоу' },
+            { id: 'track4', title: 'Понедельник', artist: 'Kizaru', rarity: 'common', description: 'Начало недели' },
+            { id: 'track5', title: 'Диалог', artist: 'Kizaru', rarity: 'common', description: 'Разговор с собой' },
+            { id: 'track6', title: 'Карьера', artist: 'Kizaru', rarity: 'common', description: 'Путь к успеху' },
+            { id: 'track7', title: 'Кэш', artist: 'Kizaru', rarity: 'common', description: 'О деньгах' },
+            { id: 'track8', title: 'Рапитура', artist: 'Kizaru', rarity: 'common', description: 'Чистый рэп' },
+            
+            // Редкие (20%)
+            { id: 'track9', title: 'Взлет', artist: 'Kizaru', rarity: 'rare', description: 'На пике формы' },
+            { id: 'track10', title: 'Карамель', artist: 'Kizaru', rarity: 'rare', description: 'Сладкий хит' },
+            { id: 'track11', title: 'Шрамы', artist: 'Kizaru', rarity: 'rare', description: 'Следы прошлого' },
+            
+            // Эпические (10%)
+            { id: 'track12', title: 'Дисквалификация', artist: 'Kizaru', rarity: 'epic', description: 'Мощный панч' },
+            { id: 'track13', title: 'Кризис', artist: 'Kizaru', rarity: 'epic', description: 'Темная тема' },
+            { id: 'track14', title: 'Последний раз', artist: 'Kizaru', rarity: 'epic', description: 'Финальный аккорд' },
+            
+            // Легендарный (5%)
+            { id: 'track15', title: 'Время 15:15', artist: 'Kizaru', rarity: 'legendary', description: 'Магическое время' }
         ];
+        
+        // Вероятности выпадения
+        const rarityChances = {
+            'common': 65,
+            'rare': 20,
+            'epic': 10,
+            'legendary': 5
+        };
+        
+        // Цвета редкости
+        const rarityColors = {
+            'common': '#4CAF50',
+            'rare': '#2196F3',
+            'epic': '#9C27B0',
+            'legendary': '#FF9800'
+        };
+        
+        // Названия редкости
+        const rarityNames = {
+            'common': 'Обычный',
+            'rare': 'Редкий',
+            'epic': 'Эпический',
+            'legendary': 'Легендарный'
+        };
+        
+        // Получение случайного трека по редкости
+        function getRandomTrack() {
+            const random = Math.random() * 100;
+            let rarity;
+            
+            if (random <= rarityChances.legendary) {
+                rarity = 'legendary';
+            } else if (random <= rarityChances.legendary + rarityChances.epic) {
+                rarity = 'epic';
+            } else if (random <= rarityChances.legendary + rarityChances.epic + rarityChances.rare) {
+                rarity = 'rare';
+            } else {
+                rarity = 'common';
+            }
+            
+            const tracksOfRarity = karmageddonTracks.filter(track => track.rarity === rarity);
+            return tracksOfRarity[Math.floor(Math.random() * tracksOfRarity.length)];
+        }
         
         // Обновление счета
         function updateScore(points) {
@@ -441,6 +497,7 @@
         
         // Открытие игрового модального окна
         function openGameModal(gameType) {
+            currentGameType = gameType;
             const modal = document.getElementById('gameModal');
             const title = document.getElementById('gameTitle');
             
@@ -453,12 +510,24 @@
             title.textContent = gameNames[gameType];
             modal.style.display = 'block';
             
+            document.getElementById('gameOverDiv').style.display = 'none';
+            
             if (gameType === 'arkanoid') {
-                document.getElementById('gameOverDiv').style.display = 'none';
                 startArkanoidGame();
+            } else if (gameType === 'snake') {
+                startSnakeGame();
             } else {
                 document.getElementById('gameInstructions').textContent = 
-                    'Эта игра скоро будет готова! А пока попробуйте Арканоид 😊';
+                    'Эта игра скоро будет готова! А пока попробуйте Арканоид или Змейку 😊';
+            }
+        }
+        
+        // Перезапуск текущей игры
+        function restartCurrentGame() {
+            if (currentGameType === 'arkanoid') {
+                startArkanoidGame();
+            } else if (currentGameType === 'snake') {
+                startSnakeGame();
             }
         }
         
@@ -466,7 +535,7 @@
         function closeGameModal() {
             gameRunning = false;
             gamePaused = false;
-            currentGame = null;
+            currentGameType = null;
             document.getElementById('gameModal').style.display = 'none';
             
             // Очистка canvas
@@ -499,13 +568,15 @@
                 const isUnlocked = unlockedTracks.includes(track.id);
                 const lockIcon = isUnlocked ? '🔓' : '🔒';
                 const trackClass = isUnlocked ? '' : 'locked';
+                const rarityClass = `rarity-${track.rarity}`;
                 
                 tracksHTML += `
                     <div class="track-item ${trackClass}">
                         <div class="track-info">
                             <div class="track-title">${lockIcon} ${track.title}</div>
                             <div class="track-details">
-                                ${track.artist}${isUnlocked ? ' • ' + track.description : ' • Заблокировано'}
+                                ${track.artist}${isUnlocked ? ' • ' + track.description : ''}
+                                ${isUnlocked ? `<br><span class="rarity-badge ${rarityClass}">${rarityNames[track.rarity]}</span>` : ''}
                             </div>
                         </div>
                         <button class="play-btn" 
@@ -532,15 +603,18 @@
             
             const popup = document.createElement('div');
             popup.className = 'track-popup';
+            const rarityClass = `rarity-${track.rarity}`;
+            
             popup.innerHTML = `
                 <h3>${isNew ? '🎉 Поздравляю!' : '📀 Трек уже есть'}</h3>
-                <div style="font-size: 48px; margin: 20px 0;">💿</div>
-                <div class="track-name">${track.title}</div>
+                <div style="font-size: 40px; margin: 15px 0; color: ${rarityColors[track.rarity]};">💿</div>
+                <div class="track-name" style="color: ${rarityColors[track.rarity]};">${track.title}</div>
                 <div class="track-artist">${track.artist}</div>
-                <p style="color: #aaa; margin: 15px 0;">
+                <div class="rarity-badge ${rarityClass}" style="margin: 10px 0;">${rarityNames[track.rarity]}</div>
+                <p style="color: #aaa; margin: 10px 0; font-size: 12px;">
                     ${isNew ? 'Ты выбил новый трек!' : 'Этот трек у тебя уже есть.'}
                 </p>
-                <button class="restart-btn" onclick="closeTrackPopup(this)" style="margin-top: 20px;">
+                <button class="restart-btn" onclick="closeTrackPopup(this)" style="margin-top: 15px;">
                     Продолжить игру
                 </button>
             `;
@@ -560,7 +634,7 @@
             gamePaused = false;
         }
         
-        // АРКАНОИД ИГРА (УЛУЧШЕННАЯ ВЕРСИЯ)
+        // АРКАНОИД ИГРА (ИСПРАВЛЕННАЯ)
         function startArkanoidGame() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -574,18 +648,18 @@
             let gameLevel = 1;
             let gameStartTime = Date.now();
             let lastTrackTime = Date.now();
-            let ballSpeed = 3;
+            let ballSpeed = 2.5;
             
             // Объекты игры
-            let ball = { x: 175, y: 200, dx: 0, dy: 0, radius: 8 };
-            let paddle = { x: 150, y: 250, width: 60, height: 10 };
+            let ball = { x: canvas.width/2, y: canvas.height - 60, dx: 0, dy: 0, radius: 6 };
+            let paddle = { x: canvas.width/2 - 30, y: canvas.height - 30, width: 60, height: 8 };
             let blocks = [];
-            let vinylRecord = null; // Музыкальная пластинка
+            let vinylRecord = null;
             
-            gameRunning = false; // Пока не началась
+            gameRunning = false;
             gamePaused = false;
             
-            // Таймер подготовки 3 секунды
+            // Таймер подготовки
             let countdown = 3;
             showCountdown();
             
@@ -609,29 +683,38 @@
                 gameRunning = true;
                 
                 // Мяч летит от игрока (вверх и в сторону)
-                ball.dx = (Math.random() > 0.5 ? 1 : -1) * ballSpeed;
-                ball.dy = -ballSpeed; // Вверх
+                const angle = (Math.random() - 0.5) * 0.8; // Ограничиваем угол
+                ball.dx = Math.sin(angle) * ballSpeed;
+                ball.dy = -Math.cos(angle) * ballSpeed;
                 
                 generateBlocks();
                 gameLoop();
                 updateGameStats();
             }
             
-            // Генерация блоков для уровня
+            // Генерация блоков (ИСПРАВЛЕНО)
             function generateBlocks() {
                 blocks = [];
                 const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'];
+                const blockWidth = 38;
+                const blockHeight = 15;
+                const padding = 2;
+                const offsetX = 10;
+                const offsetY = 20;
                 
-                for (let i = 0; i < 7; i++) {
-                    for (let j = 0; j < Math.min(3 + Math.floor(gameLevel / 2), 6); j++) {
+                const rows = Math.min(3 + Math.floor(gameLevel / 3), 6);
+                const cols = 7;
+                
+                for (let i = 0; i < cols; i++) {
+                    for (let j = 0; j < rows; j++) {
                         blocks.push({
-                            x: i * 48 + 10,
-                            y: j * 25 + 30,
-                            width: 45,
-                            height: 20,
+                            x: offsetX + i * (blockWidth + padding),
+                            y: offsetY + j * (blockHeight + padding),
+                            width: blockWidth,
+                            height: blockHeight,
                             active: true,
                             color: colors[j % colors.length],
-                            hits: gameLevel > 3 ? 2 : 1 // Прочные блоки на высоких уровнях
+                            hits: gameLevel > 5 ? 2 : 1
                         });
                     }
                 }
@@ -647,10 +730,11 @@
                 const rect = canvas.getBoundingClientRect();
                 const x = e.touches ? e.touches[0].clientX : e.clientX;
                 paddle.x = x - rect.left - paddle.width / 2;
+                // ИСПРАВЛЕНО: правильные границы
                 paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
             }
             
-            // Обновление статистики игры
+            // Обновление статистики
             function updateGameStats() {
                 if (!gameRunning) return;
                 
@@ -666,7 +750,6 @@
                 document.getElementById('gameLevel').textContent = gameLevel;
                 document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
                 
-                // Проверка времени для пластинки
                 if (timeSinceTrack >= 60 && !vinylRecord) {
                     createVinylRecord();
                 }
@@ -674,22 +757,22 @@
                 setTimeout(updateGameStats, 1000);
             }
             
-            // Создание летающей пластинки
+            // Создание пластинки
             function createVinylRecord() {
                 vinylRecord = {
                     x: Math.random() * (canvas.width - 40) + 20,
                     y: 50,
-                    dx: (Math.random() - 0.5) * 2,
-                    dy: 1,
-                    radius: 20,
-                    timeLeft: 5000, // 5 секунд
+                    dx: (Math.random() - 0.5) * 1.5,
+                    dy: 0.8,
+                    radius: 18,
+                    timeLeft: 5000,
                     rotation: 0
                 };
                 
                 tg.showAlert('💿 Пластинка появилась! Попади в неё за 5 секунд!');
             }
             
-            // Игровой цикл
+            // Игровой цикл (ИСПРАВЛЕНО)
             function gameLoop() {
                 if (!gameRunning || gamePaused) {
                     if (gameRunning && !gamePaused) {
@@ -706,24 +789,31 @@
                 ball.x += ball.dx;
                 ball.y += ball.dy;
                 
-                // Отскоки от стен
-                if (ball.x <= ball.radius || ball.x >= canvas.width - ball.radius) {
-                    ball.dx = -ball.dx;
+                // ИСПРАВЛЕНО: отскоки от стен
+                if (ball.x - ball.radius <= 0) {
+                    ball.x = ball.radius;
+                    ball.dx = Math.abs(ball.dx);
                 }
-                if (ball.y <= ball.radius) {
-                    ball.dy = -ball.dy;
+                if (ball.x + ball.radius >= canvas.width) {
+                    ball.x = canvas.width - ball.radius;
+                    ball.dx = -Math.abs(ball.dx);
+                }
+                if (ball.y - ball.radius <= 0) {
+                    ball.y = ball.radius;
+                    ball.dy = Math.abs(ball.dy);
                 }
                 
                 // Отскок от платформы
-                if (ball.y + ball.radius > paddle.y && 
-                    ball.x > paddle.x && 
-                    ball.x < paddle.x + paddle.width &&
+                if (ball.y + ball.radius >= paddle.y && 
+                    ball.x >= paddle.x && 
+                    ball.x <= paddle.x + paddle.width &&
                     ball.dy > 0) {
                     
-                    // Изменяем угол в зависимости от места попадания
                     const hitPos = (ball.x - paddle.x) / paddle.width;
-                    ball.dx = (hitPos - 0.5) * ballSpeed * 2;
-                    ball.dy = -Math.abs(ball.dy);
+                    const angle = (hitPos - 0.5) * Math.PI / 3; // Угол отскока
+                    
+                    ball.dx = Math.sin(angle) * ballSpeed;
+                    ball.dy = -Math.cos(angle) * ballSpeed;
                     ball.y = paddle.y - ball.radius;
                     tg.HapticFeedback.impactOccurred('light');
                 }
@@ -750,7 +840,6 @@
                         if (block.hits <= 0) {
                             block.active = false;
                         } else {
-                            // Меняем цвет поврежденного блока
                             block.color = '#888';
                         }
                         
@@ -765,21 +854,19 @@
                     vinylRecord.x += vinylRecord.dx;
                     vinylRecord.y += vinylRecord.dy;
                     vinylRecord.rotation += 0.1;
-                    vinylRecord.timeLeft -= 16; // ~60fps
+                    vinylRecord.timeLeft -= 16;
                     
-                    // Отскок пластинки от стен
                     if (vinylRecord.x <= vinylRecord.radius || vinylRecord.x >= canvas.width - vinylRecord.radius) {
                         vinylRecord.dx = -vinylRecord.dx;
                     }
                     
-                    // Коллизия мяча с пластинкой
+                    // Коллизия с пластинкой
                     const dx = ball.x - vinylRecord.x;
                     const dy = ball.y - vinylRecord.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
                     if (distance < ball.radius + vinylRecord.radius) {
-                        // Попали в пластинку!
-                        const randomTrack = karmageddonTracks[Math.floor(Math.random() * karmageddonTracks.length)];
+                        const randomTrack = getRandomTrack(); // Используем систему редкости
                         const isNewTrack = !unlockedTracks.includes(randomTrack.id);
                         
                         if (isNewTrack) {
@@ -791,10 +878,9 @@
                         
                         vinylRecord = null;
                         lastTrackTime = Date.now();
-                        gameScore += 50; // Бонус за пластинку
+                        gameScore += 50;
                     }
                     
-                    // Пластинка исчезает через 5 секунд
                     if (vinylRecord && vinylRecord.timeLeft <= 0) {
                         vinylRecord = null;
                         lastTrackTime = Date.now();
@@ -802,19 +888,21 @@
                     }
                 }
                 
-                // Переход на следующий уровень
-                if (blocks.every(block => !block.active)) {
+                // ИСПРАВЛЕНО: переход на следующий уровень
+                const activeBlocks = blocks.filter(block => block.active);
+                if (activeBlocks.length === 0) {
                     gameLevel++;
-                    ballSpeed += 0.5; // Увеличиваем скорость
-                    generateBlocks();
+                    ballSpeed += 0.3;
+                    generateBlocks(); // Генерируем новые блоки
                     
-                    // Возвращаем мяч в центр
-                    ball.x = 175;
-                    ball.y = 200;
-                    ball.dx = (Math.random() > 0.5 ? 1 : -1) * ballSpeed;
-                    ball.dy = -ballSpeed;
+                    // Возвращаем мяч
+                    ball.x = canvas.width/2;
+                    ball.y = canvas.height - 60;
+                    const angle = (Math.random() - 0.5) * 0.8;
+                    ball.dx = Math.sin(angle) * ballSpeed;
+                    ball.dy = -Math.cos(angle) * ballSpeed;
                     
-                    gameScore += 100; // Бонус за уровень
+                    gameScore += 100;
                     tg.showAlert(`🎉 Уровень ${gameLevel}!\nБонус: 100 очков`);
                 }
                 
@@ -842,12 +930,11 @@
                         ctx.lineWidth = 1;
                         ctx.strokeRect(block.x, block.y, block.width, block.height);
                         
-                        // Показываем количество ударов для прочных блоков
                         if (block.hits > 1) {
                             ctx.fillStyle = '#fff';
-                            ctx.font = '12px Arial';
+                            ctx.font = '10px Arial';
                             ctx.textAlign = 'center';
-                            ctx.fillText(block.hits, block.x + block.width/2, block.y + block.height/2 + 4);
+                            ctx.fillText(block.hits, block.x + block.width/2, block.y + block.height/2 + 3);
                         }
                     }
                 });
@@ -858,40 +945,254 @@
                     ctx.translate(vinylRecord.x, vinylRecord.y);
                     ctx.rotate(vinylRecord.rotation);
                     
-                    // Рисуем пластинку
                     ctx.fillStyle = '#000';
                     ctx.beginPath();
                     ctx.arc(0, 0, vinylRecord.radius, 0, Math.PI * 2);
                     ctx.fill();
                     
                     ctx.strokeStyle = '#4ecdc4';
-                    ctx.lineWidth = 3;
+                    ctx.lineWidth = 2;
                     ctx.stroke();
                     
-                    // Центральная дырка
                     ctx.fillStyle = '#4ecdc4';
                     ctx.beginPath();
-                    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                    ctx.arc(0, 0, 4, 0, Math.PI * 2);
                     ctx.fill();
                     
-                    // Полоски
                     for (let i = 0; i < 3; i++) {
                         ctx.beginPath();
-                        ctx.arc(0, 0, 8 + i * 4, 0, Math.PI * 2);
+                        ctx.arc(0, 0, 6 + i * 3, 0, Math.PI * 2);
                         ctx.stroke();
                     }
                     
                     ctx.restore();
                     
-                    // Таймер пластинки
                     const timeLeft = Math.ceil(vinylRecord.timeLeft / 1000);
                     ctx.fillStyle = '#ff6b6b';
-                    ctx.font = 'bold 16px Arial';
+                    ctx.font = 'bold 12px Arial';
                     ctx.textAlign = 'center';
-                    ctx.fillText(timeLeft, vinylRecord.x, vinylRecord.y - 30);
+                    ctx.fillText(timeLeft, vinylRecord.x, vinylRecord.y - 25);
                 }
                 
                 requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // ЗМЕЙКА ИГРА
+        function startSnakeGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            document.getElementById('gameOverDiv').style.display = 'none';
+            document.getElementById('gameInstructions').textContent = 'Используйте стрелки или свайпы для управления';
+            
+            // Переменные змейки
+            const gridSize = 16;
+            let snake = [{ x: 160, y: 120 }];
+            let food = { x: 80, y: 80 };
+            let direction = { x: gridSize, y: 0 };
+            let gameScore = 0;
+            let gameStartTime = Date.now();
+            let lastTrackTime = Date.now();
+            
+            gameRunning = false;
+            gamePaused = false;
+            
+            // Таймер подготовки
+            let countdown = 3;
+            showCountdown();
+            
+            function showCountdown() {
+                const countdownDiv = document.getElementById('countdownDiv');
+                
+                if (countdown > 0) {
+                    countdownDiv.innerHTML = `<div class="countdown">${countdown}</div>`;
+                    countdown--;
+                    setTimeout(showCountdown, 1000);
+                } else {
+                    countdownDiv.innerHTML = `<div class="countdown">GO!</div>`;
+                    setTimeout(() => {
+                        countdownDiv.innerHTML = '';
+                        startGame();
+                    }, 500);
+                }
+            }
+            
+            function startGame() {
+                gameRunning = true;
+                updateGameStats();
+                generateFood();
+                gameLoop();
+            }
+            
+            // Генерация еды
+            function generateFood() {
+                food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
+                food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
+                
+                // Проверяем что еда не на змейке
+                snake.forEach(segment => {
+                    if (segment.x === food.x && segment.y === food.y) {
+                        generateFood();
+                    }
+                });
+            }
+            
+            // Управление
+            document.addEventListener('keydown', handleKeyPress);
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            
+            let touchStartX = 0;
+            let touchStartY = 0;
+            
+            function handleTouchStart(e) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+            
+            function handleTouchMove(e) {
+                if (!gameRunning || gamePaused) return;
+                e.preventDefault();
+                
+                const touchEndX = e.touches[0].clientX;
+                const touchEndY = e.touches[0].clientY;
+                
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
+                
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Горизонтальный свайп
+                    if (deltaX > 0 && direction.x === 0) {
+                        direction = { x: gridSize, y: 0 }; // Вправо
+                    } else if (deltaX < 0 && direction.x === 0) {
+                        direction = { x: -gridSize, y: 0 }; // Влево
+                    }
+                } else {
+                    // Вертикальный свайп
+                    if (deltaY > 0 && direction.y === 0) {
+                        direction = { x: 0, y: gridSize }; // Вниз
+                    } else if (deltaY < 0 && direction.y === 0) {
+                        direction = { x: 0, y: -gridSize }; // Вверх
+                    }
+                }
+            }
+            
+            function handleKeyPress(e) {
+                if (!gameRunning || gamePaused) return;
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        if (direction.y === 0) direction = { x: 0, y: -gridSize };
+                        break;
+                    case 'ArrowDown':
+                        if (direction.y === 0) direction = { x: 0, y: gridSize };
+                        break;
+                    case 'ArrowLeft':
+                        if (direction.x === 0) direction = { x: -gridSize, y: 0 };
+                        break;
+                    case 'ArrowRight':
+                        if (direction.x === 0) direction = { x: gridSize, y: 0 };
+                        break;
+                }
+            }
+            
+            // Обновление статистики
+            function updateGameStats() {
+                if (!gameRunning) return;
+                
+                const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                const minutes = Math.floor(gameTime / 60);
+                const seconds = gameTime % 60;
+                document.getElementById('gameTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                const timeSinceTrack = Math.floor((Date.now() - lastTrackTime) / 1000);
+                const timeToTrack = Math.max(0, 60 - timeSinceTrack);
+                document.getElementById('timeToTrack').textContent = `${timeToTrack}s`;
+                
+                document.getElementById('gameLevel').textContent = Math.floor(snake.length / 5) + 1;
+                document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
+                
+                // Проверяем трек каждую минуту игры
+                if (timeSinceTrack >= 60) {
+                    const randomTrack = getRandomTrack();
+                    const isNewTrack = !unlockedTracks.includes(randomTrack.id);
+                    
+                    if (isNewTrack) {
+                        unlockedTracks.push(randomTrack.id);
+                        updateTracksCount();
+                    }
+                    
+                    showTrackPopup(randomTrack, isNewTrack);
+                    lastTrackTime = Date.now();
+                }
+                
+                setTimeout(updateGameStats, 1000);
+            }
+            
+            // Игровой цикл змейки
+            function gameLoop() {
+                if (!gameRunning || gamePaused) {
+                    if (gameRunning && !gamePaused) {
+                        setTimeout(gameLoop, 150);
+                    }
+                    return;
+                }
+                
+                // Движение змейки
+                const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+                
+                // Проверка границ (змейка проходит сквозь стены)
+                if (head.x < 0) head.x = canvas.width - gridSize;
+                if (head.x >= canvas.width) head.x = 0;
+                if (head.y < 0) head.y = canvas.height - gridSize;
+                if (head.y >= canvas.height) head.y = 0;
+                
+                // Проверка столкновения с собой
+                snake.forEach(segment => {
+                    if (head.x === segment.x && head.y === segment.y) {
+                        gameRunning = false;
+                        updateScore(gameScore);
+                        document.getElementById('gameOverDiv').style.display = 'block';
+                        document.getElementById('gameInstructions').textContent = 
+                            `Игра окончена! Длина змейки: ${snake.length}, очки: ${gameScore}`;
+                        
+                        // Очистка обработчиков
+                        document.removeEventListener('keydown', handleKeyPress);
+                        canvas.removeEventListener('touchstart', handleTouchStart);
+                        canvas.removeEventListener('touchmove', handleTouchMove);
+                        return;
+                    }
+                });
+                
+                if (!gameRunning) return;
+                
+                snake.unshift(head);
+                
+                // Проверка еды
+                if (head.x === food.x && head.y === food.y) {
+                    gameScore += 10;
+                    generateFood();
+                    tg.HapticFeedback.impactOccurred('light');
+                } else {
+                    snake.pop();
+                }
+                
+                // Очистка и рисование
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Рисуем змейку
+                snake.forEach((segment, index) => {
+                    ctx.fillStyle = index === 0 ? '#4ecdc4' : '#44a08d';
+                    ctx.fillRect(segment.x, segment.y, gridSize - 2, gridSize - 2);
+                });
+                
+                // Рисуем еду
+                ctx.fillStyle = '#ff6b6b';
+                ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
+                
+                setTimeout(gameLoop, Math.max(50, 200 - snake.length * 2)); // Ускорение
             }
         }
         
@@ -913,6 +1214,3 @@
     </script>
 </body>
 </html>
-```
-
-
