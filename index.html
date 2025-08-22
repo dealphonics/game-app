@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игровая коллекция</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .game-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        .game-button:active {
+            transform: translateY(0);
+        }
+        
+        #game-area {
+            margin: 20px 0;
+            min-height: 300px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #4CAF50;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            background: #000;
+        }
+        
+        .score {
+            color: #4CAF50;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .tracks-container {
+            text-align: left;
+            margin: 10px 0;
+        }
+        
+        .track-item {
+            background: rgba(255,255,255,0.1);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .track-item.locked {
+            background: rgba(255,255,255,0.05);
+            border-left-color: #666;
+            color: #666;
+        }
+        
+        .play-btn {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .play-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Игровая коллекция</h1>
+        
+        <div class="score">
+            Очки: <span id="scoreDisplay">0</span>
+        </div>
+        
+        <div id="menu">
+            <button class="game-button" onclick="startArkanoid()">🔴 Арканоид</button>
+            <button class="game-button" onclick="startSnake()">🐍 Змейка</button>
+            <button class="game-button" onclick="startRunner()">🏃 Раннер</button>
+            <button class="game-button" onclick="showMusic()">🎵 Музыкальная коллекция</button>
+        </div>
+        
+        <div id="game-area">
+            <canvas id="gameCanvas" width="350" height="250"></canvas>
+            <div id="game-instructions">
+                Выберите игру выше!
+            </div>
+        </div>
+        
+        <div id="music-area" style="display:none;">
+            <h2>🎵 Музыкальная коллекция</h2>
+            <div id="tracks-list" class="tracks-container"></div>
+            <button class="game-button" onclick="backToMenu()">🔙 К играм</button>
+        </div>
+    </div>
+
+    <script>
+        // Подключение к Telegram
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Игровые переменные
+        let currentGame = null;
+        let userScore = 0;
+        let unlockedTracks = ['track0']; // Стартовый трек
+        let gameRunning = false;
+        
+        // Все треки в игре
+        const allTracks = [
+            { id: 'track0', name: 'Стартовая мелодия', unlockScore: 0 },
+            { id: 'track1', name: 'Арканоид - Победа', unlockScore: 50 },
+            { id: 'track2', name: 'Змейка - Ритм', unlockScore: 100 },
+            { id: 'track3', name: 'Раннер - Скорость', unlockScore: 150 },
+            { id: 'track4', name: 'Чемпион', unlockScore: 300 }
+        ];
+        
+        // Обновление отображения очков
+        function updateScore(points) {
+            userScore += points;
+            document.getElementById('scoreDisplay').textContent = userScore;
+            
+            // Проверяем разблокировку треков
+            checkUnlockTracks();
+        }
+        
+        // Проверка разблокировки новых треков
+        function checkUnlockTracks() {
+            allTracks.forEach(track => {
+                if (userScore >= track.unlockScore && !unlockedTracks.includes(track.id)) {
+                    unlockedTracks.push(track.id);
+                    
+                    // Показываем уведомление
+                    tg.showPopup({
+                        title: '🎵 Новый трек разблокирован!',
+                        message: `Вы открыли: "${track.name}"`,
+                        buttons: [{id: 'ok', type: 'ok', text: 'Круто!'}]
+                    });
+                }
+            });
+        }
+        
+        // ИГРА 1: Простой арканоид
+        function startArkanoid() {
+            document.getElementById('music-area').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('game-instructions').innerHTML = 'Арканоид запущен! Нажмите по экрану для управления.';
+            
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            gameRunning = true;
+            
+            // Игровые объекты
+            let ball = { x: 175, y: 125, dx: 3, dy: 3, radius: 8 };
+            let paddle = { x: 150, y: 230, width: 60, height: 10 };
+            let blocks = [];
+            let gameScore = 0;
+            
+            // Создаем блоки
+            for (let i = 0; i < 6; i++) {
+                for (let j = 0; j < 4; j++) {
+                    blocks.push({
+                        x: i * 55 + 10,
+                        y: j * 20 + 30,
+                        width: 50,
+                        height: 15,
+                        active: true
+                    });
+                }
+            }
+            
+            // Управление мышью/касанием
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                paddle.x = e.clientX - rect.left - paddle.width / 2;
+            });
+            
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                paddle.x = e.touches[0].clientX - rect.left - paddle.width / 2;
+            });
+            
+            // Игровой цикл
+            function gameLoop() {
+                if (!gameRunning) return;
+                
+                // Очистка экрана
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Движение мяча
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+                
+                // Отскок от стен
+                if (ball.x <= ball.radius || ball.x >= canvas.width - ball.radius) {
+                    ball.dx = -ball.dx;
+                }
+                if (ball.y <= ball.radius) {
+                    ball.dy = -ball.dy;
+                }
+                
+                // Отскок от платформы
+                if (ball.y + ball.radius > paddle.y && 
+                    ball.x > paddle.x && 
+                    ball.x < paddle.x + paddle.width) {
+                    ball.dy = -ball.dy;
+                    ball.y = paddle.y - ball.radius;
+                }
+                
+                // Проигрыш
+                if (ball.y > canvas.height) {
+                    gameRunning = false;
+                    updateScore(gameScore);
+                    alert(`Игра окончена! Очки: ${gameScore}`);
+                    return;
+                }
+                
+                // Коллизия с блоками
+                blocks.forEach(block => {
+                    if (block.active && 
+                        ball.x > block.x && 
+                        ball.x < block.x + block.width &&
+                        ball.y > block.y && 
+                        ball.y < block.y + block.height) {
+                        block.active = false;
+                        ball.dy = -ball.dy;
+                        gameScore += 10;
+                    }
+                });
+                
+                // Проверка победы
+                if (blocks.every(block => !block.active)) {
+                    gameRunning = false;
+                    gameScore += 100; // Бонус за победу
+                    updateScore(gameScore);
+                    alert(`Победа! Бонус: 100. Итого очков: ${gameScore}`);
+                    return;
+                }
+                
+                // Рисование
+                // Мяч
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Платформа
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+                
+                // Блоки
+                blocks.forEach(block => {
+                    if (block.active) {
+                        ctx.fillStyle = '#ffaa00';
+                        ctx.fillRect(block.x, block.y, block.width, block.height);
+                    }
+                });
+                
+                // Счет
+                ctx.fillStyle = '#fff';
+                ctx.font = '16px Arial';
+                ctx.fillText(`Очки: ${gameScore}`, 10, 20);
+                
+                requestAnimationFrame(gameLoop);
+            }
+            
+            gameLoop();
+        }
+        
+        // ИГРА 2: Простая змейка
+        function startSnake() {
+            document.getElementById('music-area').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('game-instructions').innerHTML = 'Змейка! Нажимайте стрелки для управления.';
+            
+            alert('Змейка скоро будет готова! А пока играйте в арканоид 😊');
+        }
+        
+        // ИГРА 3: Простой раннер
+        function startRunner() {
+            document.getElementById('music-area').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('game-instructions').innerHTML = 'Раннер! Нажимайте пробел для прыжка.';
+            
+            alert('Раннер скоро будет готов! А пока играйте в арканоид 😊');
+        }
+        
+        // Показать музыкальную коллекцию
+        function showMusic() {
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('music-area').style.display = 'block';
+            
+            const tracksList = document.getElementById('tracks-list');
+            let tracksHTML = '';
+            
+            allTracks.forEach(track => {
+                const isUnlocked = unlockedTracks.includes(track.id);
+                const lockIcon = isUnlocked ? '🔓' : '🔒';
+                const trackClass = isUnlocked ? '' : 'locked';
+                
+                tracksHTML += `
+                    <div class="track-item ${trackClass}">
+                        <div>
+                            ${lockIcon} ${track.name}
+                            ${!isUnlocked ? `<br><small>Нужно очков: ${track.unlockScore}</small>` : ''}
+                        </div>
+                        <button class="play-btn" 
+                                ${!isUnlocked ? 'disabled' : ''} 
+                                onclick="playTrack('${track.id}', '${track.name}')">
+                            ${isUnlocked ? '▶️' : '🔒'}
+                        </button>
+                    </div>
+                `;
+            });
+            
+            tracksList.innerHTML = tracksHTML;
+        }
+        
+        // Воспроизведение трека
+        function playTrack(trackId, trackName) {
+            tg.showAlert(`🎵 Играет: ${trackName}`);
+        }
+        
+        // Возврат к меню
+        function backToMenu() {
+            document.getElementById('music-area').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('game-instructions').innerHTML = 'Выберите игру выше!';
+        }
+        
+        // Инициализация при загрузке
+        window.onload = function() {
+            checkUnlockTracks();
+        };
+    </script>
+</body>
+</html>
