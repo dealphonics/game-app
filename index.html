@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игровая коллекция</title>
+    <title>Soundkeeper - Музыкальная коллекция</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -13,7 +13,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            background: linear-gradient(135deg, #0f0f23, #1a1a2e, #16213e);
             color: white;
             font-family: 'Arial', sans-serif;
             text-align: center;
@@ -26,71 +26,177 @@
             margin: 0 auto;
         }
         
-        h1 {
-            color: #4CAF50;
-            margin-bottom: 20px;
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .score-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+            border: 1px solid #4ecdc4;
+        }
+        
+        .score {
+            color: #4ecdc4;
             font-size: 24px;
+            font-weight: bold;
         }
         
         .game-button {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
             color: white;
-            padding: 15px 20px;
-            margin: 10px;
+            padding: 18px 20px;
+            margin: 10px 0;
             border: none;
-            border-radius: 15px;
-            font-size: 16px;
+            border-radius: 20px;
+            font-size: 18px;
             cursor: pointer;
             width: 100%;
             transition: all 0.3s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+            font-weight: bold;
         }
         
         .game-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
         }
         
         .game-button:active {
             transform: translateY(0);
         }
         
-        #game-area {
-            margin: 20px 0;
-            min-height: 300px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 15px;
+        .music-button {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.3);
+        }
+        
+        .music-button:hover {
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+        }
+        
+        /* МОДАЛЬНЫЕ ОКНА */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 95%;
+            max-width: 500px;
+            border: 2px solid #4ecdc4;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+        
+        .close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .modal-body {
             padding: 20px;
-            border: 2px solid #4CAF50;
+            text-align: center;
         }
         
         #gameCanvas {
-            border: 2px solid #4CAF50;
+            border: 2px solid #4ecdc4;
             border-radius: 10px;
             background: #000;
+            margin: 10px 0;
         }
         
-        .score {
-            color: #4CAF50;
+        .game-score {
+            color: #4ecdc4;
             font-size: 18px;
             font-weight: bold;
             margin: 10px 0;
         }
         
+        .game-instructions {
+            color: #aaa;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        
+        /* МУЗЫКАЛЬНАЯ КОЛЛЕКЦИЯ */
         .tracks-container {
             text-align: left;
-            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
         }
         
         .track-item {
             background: rgba(255,255,255,0.1);
             margin: 10px 0;
             padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #4CAF50;
+            border-radius: 15px;
+            border-left: 4px solid #4ecdc4;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .track-item:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
         }
         
         .track-item.locked {
@@ -99,48 +205,105 @@
             color: #666;
         }
         
+        .track-info {
+            flex: 1;
+        }
+        
+        .track-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .track-unlock {
+            font-size: 12px;
+            color: #888;
+        }
+        
         .play-btn {
-            background: #4CAF50;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
             border: none;
             color: white;
-            padding: 8px 15px;
+            padding: 10px 15px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.1);
         }
         
         .play-btn:disabled {
             background: #666;
             cursor: not-allowed;
+            transform: none;
+        }
+        
+        .unlock-animation {
+            animation: unlockPulse 1s ease-in-out;
+        }
+        
+        @keyframes unlockPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); background: rgba(78, 205, 196, 0.3); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 Игровая коллекция</h1>
+        <div class="logo">🎵 Soundkeeper</div>
+        <div class="subtitle">Играйте. Побеждайте. Коллекционируйте музыку.</div>
         
-        <div class="score">
-            Очки: <span id="scoreDisplay">0</span>
+        <div class="score-section">
+            <div class="score">Очки: <span id="scoreDisplay">0</span></div>
+            <div style="color: #888; font-size: 12px;">Треков разблокировано: <span id="tracksCount">1</span>/5</div>
         </div>
         
-        <div id="menu">
-            <button class="game-button" onclick="startArkanoid()">🔴 Арканоид</button>
-            <button class="game-button" onclick="startSnake()">🐍 Змейка</button>
-            <button class="game-button" onclick="startRunner()">🏃 Раннер</button>
-            <button class="game-button" onclick="showMusic()">🎵 Музыкальная коллекция</button>
+        <div class="games-section">
+            <button class="game-button" onclick="openGameModal('arkanoid')">
+                🔴 Арканоид
+            </button>
+            <button class="game-button" onclick="openGameModal('snake')">
+                🐍 Змейка
+            </button>
+            <button class="game-button" onclick="openGameModal('runner')">
+                🏃 Раннер
+            </button>
+            <button class="game-button music-button" onclick="openMusicModal()">
+                🎵 Музыкальная коллекция
+            </button>
         </div>
-        
-        <div id="game-area">
-            <canvas id="gameCanvas" width="350" height="250"></canvas>
-            <div id="game-instructions">
-                Выберите игру выше!
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ИГР -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="gameTitle">Игра</h2>
+                <button class="close" onclick="closeGameModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="game-score" id="currentGameScore">Очки: 0</div>
+                <canvas id="gameCanvas" width="350" height="280"></canvas>
+                <div class="game-instructions" id="gameInstructions">
+                    Нажмите по экрану для управления
+                </div>
             </div>
         </div>
-        
-        <div id="music-area" style="display:none;">
-            <h2>🎵 Музыкальная коллекция</h2>
-            <div id="tracks-list" class="tracks-container"></div>
-            <button class="game-button" onclick="backToMenu()">🔙 К играм</button>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ МУЗЫКИ -->
+    <div id="musicModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🎵 Музыкальная коллекция</h2>
+                <button class="close" onclick="closeMusicModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tracks-container" id="tracksList"></div>
+            </div>
         </div>
     </div>
 
@@ -149,200 +312,103 @@
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        tg.setHeaderColor('#0f0f23');
         
         // Игровые переменные
-        let currentGame = null;
         let userScore = 0;
-        let unlockedTracks = ['track0']; // Стартовый трек
+        let unlockedTracks = ['track0'];
+        let currentGame = null;
         let gameRunning = false;
         
-        // Все треки в игре
+        // Все треки
         const allTracks = [
-            { id: 'track0', name: 'Стартовая мелодия', unlockScore: 0 },
-            { id: 'track1', name: 'Арканоид - Победа', unlockScore: 50 },
-            { id: 'track2', name: 'Змейка - Ритм', unlockScore: 100 },
-            { id: 'track3', name: 'Раннер - Скорость', unlockScore: 150 },
-            { id: 'track4', name: 'Чемпион', unlockScore: 300 }
+            { id: 'track0', name: '🎵 Звуки начала', description: 'Стартовая мелодия', unlockScore: 0 },
+            { id: 'track1', name: '🔴 Арканоид Бит', description: 'Ритм разрушения', unlockScore: 50 },
+            { id: 'track2', name: '🐍 Змеиный Джаз', description: 'Плавные изгибы', unlockScore: 100 },
+            { id: 'track3', name: '🏃 Скорость Света', description: 'Энергия движения', unlockScore: 200 },
+            { id: 'track4', name: '👑 Мастер Звука', description: 'Трек чемпиона', unlockScore: 400 }
         ];
         
-        // Обновление отображения очков
+        // Обновление счета
         function updateScore(points) {
             userScore += points;
             document.getElementById('scoreDisplay').textContent = userScore;
-            
-            // Проверяем разблокировку треков
             checkUnlockTracks();
+            updateTracksCount();
         }
         
-        // Проверка разблокировки новых треков
+        // Проверка новых треков
         function checkUnlockTracks() {
             allTracks.forEach(track => {
                 if (userScore >= track.unlockScore && !unlockedTracks.includes(track.id)) {
                     unlockedTracks.push(track.id);
                     
-                    // Показываем уведомление
-                    tg.showPopup({
-                        title: '🎵 Новый трек разблокирован!',
-                        message: `Вы открыли: "${track.name}"`,
-                        buttons: [{id: 'ok', type: 'ok', text: 'Круто!'}]
-                    });
+                    // Анимация разблокировки
+                    setTimeout(() => {
+                        tg.showPopup({
+                            title: '🎵 Новый трек разблокирован!',
+                            message: `${track.name}\n"${track.description}"`,
+                            buttons: [{id: 'ok', type: 'ok', text: 'Прослушать!'}]
+                        });
+                    }, 500);
                 }
             });
         }
         
-        // ИГРА 1: Простой арканоид
-        function startArkanoid() {
-            document.getElementById('music-area').style.display = 'none';
-            document.getElementById('game-area').style.display = 'block';
-            document.getElementById('game-instructions').innerHTML = 'Арканоид запущен! Нажмите по экрану для управления.';
+        // Обновление счетчика треков
+        function updateTracksCount() {
+            document.getElementById('tracksCount').textContent = unlockedTracks.length;
+        }
+        
+        // Открытие игрового модального окна
+        function openGameModal(gameType) {
+            const modal = document.getElementById('gameModal');
+            const title = document.getElementById('gameTitle');
             
+            const gameNames = {
+                'arkanoid': '🔴 Арканоид',
+                'snake': '🐍 Змейка', 
+                'runner': '🏃 Раннер'
+            };
+            
+            title.textContent = gameNames[gameType];
+            modal.style.display = 'block';
+            
+            if (gameType === 'arkanoid') {
+                startArkanoidGame();
+            } else {
+                document.getElementById('gameInstructions').textContent = 
+                    'Эта игра скоро будет готова! А пока попробуйте Арканоид 😊';
+            }
+        }
+        
+        // Закрытие игрового модального окна
+        function closeGameModal() {
+            gameRunning = false;
+            currentGame = null;
+            document.getElementById('gameModal').style.display = 'none';
+            
+            // Очистка canvas
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
-            gameRunning = true;
-            
-            // Игровые объекты
-            let ball = { x: 175, y: 125, dx: 3, dy: 3, radius: 8 };
-            let paddle = { x: 150, y: 230, width: 60, height: 10 };
-            let blocks = [];
-            let gameScore = 0;
-            
-            // Создаем блоки
-            for (let i = 0; i < 6; i++) {
-                for (let j = 0; j < 4; j++) {
-                    blocks.push({
-                        x: i * 55 + 10,
-                        y: j * 20 + 30,
-                        width: 50,
-                        height: 15,
-                        active: true
-                    });
-                }
-            }
-            
-            // Управление мышью/касанием
-            canvas.addEventListener('mousemove', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                paddle.x = e.clientX - rect.left - paddle.width / 2;
-            });
-            
-            canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                paddle.x = e.touches[0].clientX - rect.left - paddle.width / 2;
-            });
-            
-            // Игровой цикл
-            function gameLoop() {
-                if (!gameRunning) return;
-                
-                // Очистка экрана
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Движение мяча
-                ball.x += ball.dx;
-                ball.y += ball.dy;
-                
-                // Отскок от стен
-                if (ball.x <= ball.radius || ball.x >= canvas.width - ball.radius) {
-                    ball.dx = -ball.dx;
-                }
-                if (ball.y <= ball.radius) {
-                    ball.dy = -ball.dy;
-                }
-                
-                // Отскок от платформы
-                if (ball.y + ball.radius > paddle.y && 
-                    ball.x > paddle.x && 
-                    ball.x < paddle.x + paddle.width) {
-                    ball.dy = -ball.dy;
-                    ball.y = paddle.y - ball.radius;
-                }
-                
-                // Проигрыш
-                if (ball.y > canvas.height) {
-                    gameRunning = false;
-                    updateScore(gameScore);
-                    alert(`Игра окончена! Очки: ${gameScore}`);
-                    return;
-                }
-                
-                // Коллизия с блоками
-                blocks.forEach(block => {
-                    if (block.active && 
-                        ball.x > block.x && 
-                        ball.x < block.x + block.width &&
-                        ball.y > block.y && 
-                        ball.y < block.y + block.height) {
-                        block.active = false;
-                        ball.dy = -ball.dy;
-                        gameScore += 10;
-                    }
-                });
-                
-                // Проверка победы
-                if (blocks.every(block => !block.active)) {
-                    gameRunning = false;
-                    gameScore += 100; // Бонус за победу
-                    updateScore(gameScore);
-                    alert(`Победа! Бонус: 100. Итого очков: ${gameScore}`);
-                    return;
-                }
-                
-                // Рисование
-                // Мяч
-                ctx.fillStyle = '#ff4444';
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Платформа
-                ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-                
-                // Блоки
-                blocks.forEach(block => {
-                    if (block.active) {
-                        ctx.fillStyle = '#ffaa00';
-                        ctx.fillRect(block.x, block.y, block.width, block.height);
-                    }
-                });
-                
-                // Счет
-                ctx.fillStyle = '#fff';
-                ctx.font = '16px Arial';
-                ctx.fillText(`Очки: ${gameScore}`, 10, 20);
-                
-                requestAnimationFrame(gameLoop);
-            }
-            
-            gameLoop();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         
-        // ИГРА 2: Простая змейка
-        function startSnake() {
-            document.getElementById('music-area').style.display = 'none';
-            document.getElementById('game-area').style.display = 'block';
-            document.getElementById('game-instructions').innerHTML = 'Змейка! Нажимайте стрелки для управления.';
-            
-            alert('Змейка скоро будет готова! А пока играйте в арканоид 😊');
+        // Открытие музыкального модального окна
+        function openMusicModal() {
+            const modal = document.getElementById('musicModal');
+            modal.style.display = 'block';
+            updateMusicList();
         }
         
-        // ИГРА 3: Простой раннер
-        function startRunner() {
-            document.getElementById('music-area').style.display = 'none';
-            document.getElementById('game-area').style.display = 'block';
-            document.getElementById('game-instructions').innerHTML = 'Раннер! Нажимайте пробел для прыжка.';
-            
-            alert('Раннер скоро будет готов! А пока играйте в арканоид 😊');
+        // Закрытие музыкального модального окна
+        function closeMusicModal() {
+            document.getElementById('musicModal').style.display = 'none';
         }
         
-        // Показать музыкальную коллекцию
-        function showMusic() {
-            document.getElementById('game-area').style.display = 'none';
-            document.getElementById('music-area').style.display = 'block';
-            
-            const tracksList = document.getElementById('tracks-list');
+        // Обновление списка музыки
+        function updateMusicList() {
+            const tracksList = document.getElementById('tracksList');
             let tracksHTML = '';
             
             allTracks.forEach(track => {
@@ -351,10 +417,12 @@
                 const trackClass = isUnlocked ? '' : 'locked';
                 
                 tracksHTML += `
-                    <div class="track-item ${trackClass}">
-                        <div>
-                            ${lockIcon} ${track.name}
-                            ${!isUnlocked ? `<br><small>Нужно очков: ${track.unlockScore}</small>` : ''}
+                    <div class="track-item ${trackClass}" id="track-${track.id}">
+                        <div class="track-info">
+                            <div class="track-name">${lockIcon} ${track.name}</div>
+                            <div class="track-unlock">
+                                ${isUnlocked ? track.description : `Нужно очков: ${track.unlockScore}`}
+                            </div>
                         </div>
                         <button class="play-btn" 
                                 ${!isUnlocked ? 'disabled' : ''} 
@@ -370,20 +438,158 @@
         
         // Воспроизведение трека
         function playTrack(trackId, trackName) {
-            tg.showAlert(`🎵 Играет: ${trackName}`);
+            tg.HapticFeedback.impactOccurred('light');
+            tg.showAlert(`🎵 Сейчас играет: ${trackName}`);
         }
         
-        // Возврат к меню
-        function backToMenu() {
-            document.getElementById('music-area').style.display = 'none';
-            document.getElementById('game-area').style.display = 'block';
-            document.getElementById('game-instructions').innerHTML = 'Выберите игру выше!';
+        // АРКАНОИД ИГРА
+        function startArkanoidGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('currentGameScore');
+            
+            gameRunning = true;
+            let gameScore = 0;
+            
+            // Игровые объекты
+            let ball = { x: 175, y: 140, dx: 3, dy: 3, radius: 8 };
+            let paddle = { x: 150, y: 250, width: 60, height: 10 };
+            let blocks = [];
+            
+            // Создание блоков
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j < 4; j++) {
+                    blocks.push({
+                        x: i * 48 + 10,
+                        y: j * 25 + 30,
+                        width: 45,
+                        height: 20,
+                        active: true,
+                        color: `hsl(${(i * j * 30) % 360}, 70%, 60%)`
+                    });
+                }
+            }
+            
+            // Управление
+            canvas.addEventListener('mousemove', movePaddle);
+            canvas.addEventListener('touchmove', movePaddle);
+            
+            function movePaddle(e) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const x = e.touches ? e.touches[0].clientX : e.clientX;
+                paddle.x = x - rect.left - paddle.width / 2;
+                paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
+            }
+            
+            // Игровой цикл
+            function gameLoop() {
+                if (!gameRunning) return;
+                
+                // Очистка
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Движение мяча
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+                
+                // Отскоки от стен
+                if (ball.x <= ball.radius || ball.x >= canvas.width - ball.radius) {
+                    ball.dx = -ball.dx;
+                }
+                if (ball.y <= ball.radius) {
+                    ball.dy = -ball.dy;
+                }
+                
+                // Отскок от платформы
+                if (ball.y + ball.radius > paddle.y && 
+                    ball.x > paddle.x && 
+                    ball.x < paddle.x + paddle.width &&
+                    ball.dy > 0) {
+                    ball.dy = -ball.dy;
+                    ball.y = paddle.y - ball.radius;
+                    tg.HapticFeedback.impactOccurred('light');
+                }
+                
+                // Проигрыш
+                if (ball.y > canvas.height) {
+                    gameRunning = false;
+                    updateScore(gameScore);
+                    tg.showAlert(`Игра окончена!\nВы набрали: ${gameScore} очков`);
+                    return;
+                }
+                
+                // Коллизия с блоками
+                blocks.forEach(block => {
+                    if (block.active && 
+                        ball.x - ball.radius < block.x + block.width &&
+                        ball.x + ball.radius > block.x &&
+                        ball.y - ball.radius < block.y + block.height &&
+                        ball.y + ball.radius > block.y) {
+                        block.active = false;
+                        ball.dy = -ball.dy;
+                        gameScore += 10;
+                        scoreDisplay.textContent = `Очки: ${gameScore}`;
+                        tg.HapticFeedback.impactOccurred('medium');
+                    }
+                });
+                
+                // Победа
+                if (blocks.every(block => !block.active)) {
+                    gameRunning = false;
+                    gameScore += 100;
+                    updateScore(gameScore);
+                    tg.showAlert(`🎉 ПОБЕДА!\nБонус: 100 очков\nИтого: ${gameScore} очков`);
+                    return;
+                }
+                
+                // Рисование
+                // Мяч
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Платформа
+                const gradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y);
+                gradient.addColorStop(0, '#4ecdc4');
+                gradient.addColorStop(1, '#44a08d');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+                
+                // Блоки
+                blocks.forEach(block => {
+                    if (block.active) {
+                        ctx.fillStyle = block.color;
+                        ctx.fillRect(block.x, block.y, block.width, block.height);
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(block.x, block.y, block.width, block.height);
+                    }
+                });
+                
+                requestAnimationFrame(gameLoop);
+            }
+            
+            gameLoop();
         }
         
-        // Инициализация при загрузке
-        window.onload = function() {
-            checkUnlockTracks();
-        };
+        // Закрытие модальных окон по клику вне их
+        window.onclick = function(event) {
+            const gameModal = document.getElementById('gameModal');
+            const musicModal = document.getElementById('musicModal');
+            
+            if (event.target === gameModal) {
+                closeGameModal();
+            }
+            if (event.target === musicModal) {
+                closeMusicModal();
+            }
+        }
+        
+        // Инициализация
+        updateTracksCount();
     </script>
 </body>
 </html>
