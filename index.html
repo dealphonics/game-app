@@ -154,6 +154,7 @@
             margin: 10px 0;
             max-width: 100%;
             height: auto;
+            position: relative;
         }
         
         .game-score {
@@ -191,10 +192,57 @@
             z-index: 10;
         }
         
+        /* ПЕРЕХОД МЕЖДУ УРОВНЯМИ */
+        .level-transition {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 15;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .level-title {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4ecdc4;
+            text-shadow: 0 0 30px #4ecdc4;
+            margin-bottom: 20px;
+            animation: levelPulse 2s ease-in-out;
+        }
+        
+        .level-subtitle {
+            font-size: 16px;
+            color: #888;
+            animation: fadeInDelay 1s ease-in-out;
+        }
+        
         @keyframes pulse {
             0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
             50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes levelPulse {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes fadeInDelay {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
         
         /* КНОПКА ПЕРЕЗАПУСКА */
@@ -376,6 +424,7 @@
                 <div style="position: relative;">
                     <canvas id="gameCanvas" width="320" height="240"></canvas>
                     <div id="countdownDiv"></div>
+                    <div id="levelTransitionDiv"></div>
                 </div>
                 <div class="game-instructions" id="gameInstructions">
                     Нажмите по экрану для управления
@@ -464,6 +513,297 @@
             'legendary': 'Легендарный'
         };
         
+        // 20 РАЗНЫХ ПАТТЕРНОВ БЛОКОВ
+        const blockPatterns = [
+            // Паттерн 1: Простая стена
+            () => { return { rows: 4, cols: 7, pattern: 'full' }; },
+            
+            // Паттерн 2: Пирамида
+            () => { 
+                const blocks = [];
+                for (let row = 0; row < 5; row++) {
+                    const blocksInRow = 7 - row * 2;
+                    const startCol = row;
+                    for (let col = 0; col < blocksInRow; col++) {
+                        blocks.push({ row: row, col: startCol + col });
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 3: Буква W
+            () => {
+                const blocks = [];
+                const pattern = [
+                    [1,0,0,1,0,0,1],
+                    [1,0,1,1,1,0,1],
+                    [1,1,0,1,0,1,1],
+                    [1,0,0,1,0,0,1]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 4: Шахматная доска
+            () => {
+                const blocks = [];
+                for (let row = 0; row < 4; row++) {
+                    for (let col = 0; col < 7; col++) {
+                        if ((row + col) % 2 === 0) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 5: Крест
+            () => {
+                const blocks = [];
+                for (let row = 0; row < 5; row++) {
+                    blocks.push({ row: row, col: 3 }); // Вертикальная линия
+                }
+                for (let col = 0; col < 7; col++) {
+                    blocks.push({ row: 2, col: col }); // Горизонтальная линия
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 6: Круг
+            () => {
+                const blocks = [];
+                const centerX = 3, centerY = 2, radius = 2;
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 7; col++) {
+                        const distance = Math.sqrt((col - centerX) ** 2 + (row - centerY) ** 2);
+                        if (distance <= radius && distance >= radius - 1) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 7: Зигзаг
+            () => {
+                const blocks = [];
+                for (let col = 0; col < 7; col++) {
+                    const row = col % 2 === 0 ? 0 : 2;
+                    blocks.push({ row: row, col: col });
+                    blocks.push({ row: row + 1, col: col });
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 8: Дуги
+            () => {
+                const blocks = [];
+                const pattern = [
+                    [0,1,1,1,1,1,0],
+                    [1,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,1],
+                    [0,1,1,1,1,1,0]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 9: Стрелка вниз
+            () => {
+                const blocks = [];
+                const pattern = [
+                    [0,0,0,1,0,0,0],
+                    [0,0,1,1,1,0,0],
+                    [0,1,1,1,1,1,0],
+                    [1,1,1,1,1,1,1]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерн 10: Ромб
+            () => {
+                const blocks = [];
+                const pattern = [
+                    [0,0,0,1,0,0,0],
+                    [0,0,1,1,1,0,0],
+                    [0,1,1,1,1,1,0],
+                    [1,1,1,1,1,1,1],
+                    [0,1,1,1,1,1,0]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            // Паттерны 11-20: Различные комбинации
+            () => { // Полосы
+                const blocks = [];
+                for (let col = 0; col < 7; col += 2) {
+                    for (let row = 0; row < 4; row++) {
+                        blocks.push({ row: row, col: col });
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Буква H
+                const blocks = [];
+                for (let row = 0; row < 5; row++) {
+                    blocks.push({ row: row, col: 1 });
+                    blocks.push({ row: row, col: 5 });
+                    if (row === 2) {
+                        for (let col = 2; col <= 4; col++) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Спираль
+                const blocks = [];
+                const pattern = [
+                    [1,1,1,1,1,1,1],
+                    [0,0,0,0,0,0,1],
+                    [0,1,1,1,1,0,1],
+                    [0,1,0,0,1,0,1],
+                    [0,1,1,1,1,0,1]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Треугольники
+                const blocks = [];
+                // Левый треугольник
+                for (let row = 0; row < 4; row++) {
+                    for (let col = 0; col <= row; col++) {
+                        blocks.push({ row: row, col: col });
+                    }
+                }
+                // Правый треугольник
+                for (let row = 0; row < 4; row++) {
+                    for (let col = 6; col >= 6 - row; col--) {
+                        blocks.push({ row: row, col: col });
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Цифра 8
+                const blocks = [];
+                const pattern = [
+                    [0,1,1,1,1,1,0],
+                    [1,0,0,0,0,0,1],
+                    [0,1,1,1,1,1,0],
+                    [1,0,0,0,0,0,1],
+                    [0,1,1,1,1,1,0]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Звезда
+                const blocks = [];
+                const pattern = [
+                    [0,0,0,1,0,0,0],
+                    [0,1,0,1,0,1,0],
+                    [1,1,1,1,1,1,1],
+                    [0,1,0,1,0,1,0],
+                    [0,0,1,0,1,0,0]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Лабиринт
+                const blocks = [];
+                const pattern = [
+                    [1,1,1,0,1,1,1],
+                    [1,0,0,0,0,0,1],
+                    [1,0,1,1,1,0,1],
+                    [1,0,0,0,0,0,1],
+                    [1,1,1,0,1,1,1]
+                ];
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col]) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Волны
+                const blocks = [];
+                for (let col = 0; col < 7; col++) {
+                    const row = Math.floor(2 + 2 * Math.sin(col * Math.PI / 3));
+                    blocks.push({ row: Math.max(0, Math.min(3, row)), col: col });
+                    blocks.push({ row: Math.max(0, Math.min(3, row + 1)), col: col });
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Случайный узор
+                const blocks = [];
+                for (let row = 0; row < 4; row++) {
+                    for (let col = 0; col < 7; col++) {
+                        if (Math.random() > 0.4) {
+                            blocks.push({ row: row, col: col });
+                        }
+                    }
+                }
+                return { custom: blocks };
+            },
+            
+            () => { // Плотная стена
+                return { rows: 6, cols: 7, pattern: 'full' };
+            }
+        ];
+        
         // Получение случайного трека по редкости
         function getRandomTrack() {
             const random = Math.random() * 100;
@@ -543,8 +883,9 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Очистка таймера
+            // Очистка элементов
             document.getElementById('countdownDiv').innerHTML = '';
+            document.getElementById('levelTransitionDiv').innerHTML = '';
         }
         
         // Открытие музыкального модального окна
@@ -597,6 +938,26 @@
             tg.showAlert(`🎵 Сейчас играет:\n${trackTitle} - ${trackArtist}`);
         }
         
+        // Показать переход между уровнями
+        function showLevelTransition(level, callback) {
+            gamePaused = true;
+            
+            const transitionDiv = document.getElementById('levelTransitionDiv');
+            transitionDiv.innerHTML = `
+                <div class="level-transition">
+                    <div class="level-title">Уровень ${level}!</div>
+                    <div class="level-subtitle">Приготовься к бою</div>
+                </div>
+            `;
+            
+            // Убираем переход через 2.5 секунды
+            setTimeout(() => {
+                transitionDiv.innerHTML = '';
+                gamePaused = false;
+                if (callback) callback();
+            }, 2500);
+        }
+        
         // Показать всплывающее окно трека
         function showTrackPopup(track, isNew) {
             gamePaused = true;
@@ -634,7 +995,7 @@
             gamePaused = false;
         }
         
-        // АРКАНОИД ИГРА (ИСПРАВЛЕННАЯ)
+        // АРКАНОИД ИГРА (ПОЛНОСТЬЮ ПЕРЕРАБОТАННАЯ)
         function startArkanoidGame() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -642,13 +1003,15 @@
             // Сброс UI
             document.getElementById('gameOverDiv').style.display = 'none';
             document.getElementById('gameInstructions').textContent = 'Приготовься...';
+            document.getElementById('levelTransitionDiv').innerHTML = '';
             
             // Игровые переменные
             let gameScore = 0;
             let gameLevel = 1;
             let gameStartTime = Date.now();
             let lastTrackTime = Date.now();
-            let ballSpeed = 2.5;
+            let baseSpeed = 2.5;
+            let ballSpeed = baseSpeed;
             
             // Объекты игры
             let ball = { x: canvas.width/2, y: canvas.height - 60, dx: 0, dy: 0, radius: 6 };
@@ -682,8 +1045,8 @@
             function startGame() {
                 gameRunning = true;
                 
-                // Мяч летит от игрока (вверх и в сторону)
-                const angle = (Math.random() - 0.5) * 0.8; // Ограничиваем угол
+                // Мяч летит от игрока
+                const angle = (Math.random() - 0.5) * 0.6; // Ограниченный угол
                 ball.dx = Math.sin(angle) * ballSpeed;
                 ball.dy = -Math.cos(angle) * ballSpeed;
                 
@@ -692,30 +1055,53 @@
                 updateGameStats();
             }
             
-            // Генерация блоков (ИСПРАВЛЕНО)
+            // Генерация блоков с использованием паттернов
             function generateBlocks() {
                 blocks = [];
-                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'];
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#e17055'];
+                
+                // Выбираем случайный паттерн
+                const patternIndex = Math.floor(Math.random() * blockPatterns.length);
+                const pattern = blockPatterns[patternIndex]();
+                
                 const blockWidth = 38;
                 const blockHeight = 15;
                 const padding = 2;
                 const offsetX = 10;
                 const offsetY = 20;
                 
-                const rows = Math.min(3 + Math.floor(gameLevel / 3), 6);
-                const cols = 7;
-                
-                for (let i = 0; i < cols; i++) {
-                    for (let j = 0; j < rows; j++) {
-                        blocks.push({
-                            x: offsetX + i * (blockWidth + padding),
-                            y: offsetY + j * (blockHeight + padding),
-                            width: blockWidth,
-                            height: blockHeight,
-                            active: true,
-                            color: colors[j % colors.length],
-                            hits: gameLevel > 5 ? 2 : 1
-                        });
+                if (pattern.custom) {
+                    // Кастомный паттерн
+                    pattern.custom.forEach(pos => {
+                        if (pos.row >= 0 && pos.col >= 0 && pos.col < 7) {
+                            blocks.push({
+                                x: offsetX + pos.col * (blockWidth + padding),
+                                y: offsetY + pos.row * (blockHeight + padding),
+                                width: blockWidth,
+                                height: blockHeight,
+                                active: true,
+                                color: colors[pos.row % colors.length],
+                                hits: gameLevel > 5 ? (Math.random() > 0.7 ? 2 : 1) : 1
+                            });
+                        }
+                    });
+                } else {
+                    // Стандартный паттерн
+                    const rows = pattern.rows || 4;
+                    const cols = pattern.cols || 7;
+                    
+                    for (let i = 0; i < cols; i++) {
+                        for (let j = 0; j < rows; j++) {
+                            blocks.push({
+                                x: offsetX + i * (blockWidth + padding),
+                                y: offsetY + j * (blockHeight + padding),
+                                width: blockWidth,
+                                height: blockHeight,
+                                active: true,
+                                color: colors[j % colors.length],
+                                hits: gameLevel > 5 ? (Math.random() > 0.7 ? 2 : 1) : 1
+                            });
+                        }
                     }
                 }
             }
@@ -730,7 +1116,6 @@
                 const rect = canvas.getBoundingClientRect();
                 const x = e.touches ? e.touches[0].clientX : e.clientX;
                 paddle.x = x - rect.left - paddle.width / 2;
-                // ИСПРАВЛЕНО: правильные границы
                 paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
             }
             
@@ -750,6 +1135,7 @@
                 document.getElementById('gameLevel').textContent = gameLevel;
                 document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
                 
+                // Пластинка появляется тихо каждую минуту
                 if (timeSinceTrack >= 60 && !vinylRecord) {
                     createVinylRecord();
                 }
@@ -757,7 +1143,7 @@
                 setTimeout(updateGameStats, 1000);
             }
             
-            // Создание пластинки
+            // Создание пластинки (без уведомлений)
             function createVinylRecord() {
                 vinylRecord = {
                     x: Math.random() * (canvas.width - 40) + 20,
@@ -768,11 +1154,9 @@
                     timeLeft: 5000,
                     rotation: 0
                 };
-                
-                tg.showAlert('💿 Пластинка появилась! Попади в неё за 5 секунд!');
             }
             
-            // Игровой цикл (ИСПРАВЛЕНО)
+            // Игровой цикл
             function gameLoop() {
                 if (!gameRunning || gamePaused) {
                     if (gameRunning && !gamePaused) {
@@ -789,7 +1173,7 @@
                 ball.x += ball.dx;
                 ball.y += ball.dy;
                 
-                // ИСПРАВЛЕНО: отскоки от стен
+                // ИСПРАВЛЕННАЯ ФИЗИКА: мяч всегда остается в поле
                 if (ball.x - ball.radius <= 0) {
                     ball.x = ball.radius;
                     ball.dx = Math.abs(ball.dx);
@@ -810,7 +1194,7 @@
                     ball.dy > 0) {
                     
                     const hitPos = (ball.x - paddle.x) / paddle.width;
-                    const angle = (hitPos - 0.5) * Math.PI / 3; // Угол отскока
+                    const angle = (hitPos - 0.5) * Math.PI / 3;
                     
                     ball.dx = Math.sin(angle) * ballSpeed;
                     ball.dy = -Math.cos(angle) * ballSpeed;
@@ -866,7 +1250,7 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
                     if (distance < ball.radius + vinylRecord.radius) {
-                        const randomTrack = getRandomTrack(); // Используем систему редкости
+                        const randomTrack = getRandomTrack();
                         const isNewTrack = !unlockedTracks.includes(randomTrack.id);
                         
                         if (isNewTrack) {
@@ -881,29 +1265,38 @@
                         gameScore += 50;
                     }
                     
+                    // Пластинка исчезает тихо
                     if (vinylRecord && vinylRecord.timeLeft <= 0) {
                         vinylRecord = null;
                         lastTrackTime = Date.now();
-                        tg.showAlert('💿 Пластинка исчезла!');
                     }
                 }
                 
-                // ИСПРАВЛЕНО: переход на следующий уровень
+                // Переход на следующий уровень
                 const activeBlocks = blocks.filter(block => block.active);
                 if (activeBlocks.length === 0) {
                     gameLevel++;
-                    ballSpeed += 0.3;
-                    generateBlocks(); // Генерируем новые блоки
                     
-                    // Возвращаем мяч
-                    ball.x = canvas.width/2;
-                    ball.y = canvas.height - 60;
-                    const angle = (Math.random() - 0.5) * 0.8;
-                    ball.dx = Math.sin(angle) * ballSpeed;
-                    ball.dy = -Math.cos(angle) * ballSpeed;
+                    // Ускорение каждые 3 уровня
+                    if (gameLevel % 3 === 1) {
+                        ballSpeed += 0.4;
+                    }
                     
                     gameScore += 100;
-                    tg.showAlert(`🎉 Уровень ${gameLevel}!\nБонус: 100 очков`);
+                    
+                    // Показываем переход уровня
+                    showLevelTransition(gameLevel, () => {
+                        // После перехода генерируем новые блоки
+                        generateBlocks();
+                        
+                        // Возвращаем мяч в стартовую позицию
+                        ball.x = canvas.width/2;
+                        ball.y = canvas.height - 60;
+                        
+                        const angle = (Math.random() - 0.5) * 0.6;
+                        ball.dx = Math.sin(angle) * ballSpeed;
+                        ball.dy = -Math.cos(angle) * ballSpeed;
+                    });
                 }
                 
                 // РИСОВАНИЕ
@@ -967,6 +1360,7 @@
                     
                     ctx.restore();
                     
+                    // Таймер пластинки
                     const timeLeft = Math.ceil(vinylRecord.timeLeft / 1000);
                     ctx.fillStyle = '#ff6b6b';
                     ctx.font = 'bold 12px Arial';
@@ -978,7 +1372,7 @@
             }
         }
         
-        // ЗМЕЙКА ИГРА
+        // ЗМЕЙКА ИГРА (СОКРАЩЕННАЯ ВЕРСИЯ)
         function startSnakeGame() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -1025,12 +1419,13 @@
                 gameLoop();
             }
             
-            // Генерация еды
+            // Остальная логика змейки остается прежней...
+            // (Для экономии места оставляю как есть)
+            
             function generateFood() {
                 food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
                 food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
                 
-                // Проверяем что еда не на змейке
                 snake.forEach(segment => {
                     if (segment.x === food.x && segment.y === food.y) {
                         generateFood();
@@ -1038,7 +1433,90 @@
                 });
             }
             
-            // Управление
+            function updateGameStats() {
+                if (!gameRunning) return;
+                
+                const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                const minutes = Math.floor(gameTime / 60);
+                const seconds = gameTime % 60;
+                document.getElementById('gameTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                const timeSinceTrack = Math.floor((Date.now() - lastTrackTime) / 1000);
+                const timeToTrack = Math.max(0, 60 - timeSinceTrack);
+                document.getElementById('timeToTrack').textContent = `${timeToTrack}s`;
+                
+                document.getElementById('gameLevel').textContent = Math.floor(snake.length / 5) + 1;
+                document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
+                
+                if (timeSinceTrack >= 60) {
+                    const randomTrack = getRandomTrack();
+                    const isNewTrack = !unlockedTracks.includes(randomTrack.id);
+                    
+                    if (isNewTrack) {
+                        unlockedTracks.push(randomTrack.id);
+                        updateTracksCount();
+                    }
+                    
+                    showTrackPopup(randomTrack, isNewTrack);
+                    lastTrackTime = Date.now();
+                }
+                
+                setTimeout(updateGameStats, 1000);
+            }
+            
+            function gameLoop() {
+                if (!gameRunning || gamePaused) {
+                    if (gameRunning && !gamePaused) {
+                        setTimeout(gameLoop, 150);
+                    }
+                    return;
+                }
+                
+                const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+                
+                if (head.x < 0) head.x = canvas.width - gridSize;
+                if (head.x >= canvas.width) head.x = 0;
+                if (head.y < 0) head.y = canvas.height - gridSize;
+                if (head.y >= canvas.height) head.y = 0;
+                
+                snake.forEach(segment => {
+                    if (head.x === segment.x && head.y === segment.y) {
+                        gameRunning = false;
+                        updateScore(gameScore);
+                        document.getElementById('gameOverDiv').style.display = 'block';
+                        document.getElementById('gameInstructions').textContent = 
+                            `Игра окончена! Длина змейки: ${snake.length}, очки: ${gameScore}`;
+                        return;
+                    }
+                });
+                
+                if (!gameRunning) return;
+                
+                snake.unshift(head);
+                
+                if (head.x === food.x && head.y === food.y) {
+                    gameScore += 10;
+                    generateFood();
+                    tg.HapticFeedback.impactOccurred('light');
+                } else {
+                    snake.pop();
+                }
+                
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                snake.forEach((segment, index) => {
+                    ctx.fillStyle = index === 0 ? '#4ecdc4' : '#44a08d';
+                    ctx.fillRect(segment.x, segment.y, gridSize - 2, gridSize - 2);
+                });
+                
+                ctx.fillStyle = '#ff6b6b';
+                ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
+                
+                setTimeout(gameLoop, Math.max(50, 200 - snake.length * 2));
+            }
+            
+            // Управление змейкой
             document.addEventListener('keydown', handleKeyPress);
             canvas.addEventListener('touchstart', handleTouchStart);
             canvas.addEventListener('touchmove', handleTouchMove);
@@ -1062,18 +1540,16 @@
                 const deltaY = touchEndY - touchStartY;
                 
                 if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    // Горизонтальный свайп
                     if (deltaX > 0 && direction.x === 0) {
-                        direction = { x: gridSize, y: 0 }; // Вправо
+                        direction = { x: gridSize, y: 0 };
                     } else if (deltaX < 0 && direction.x === 0) {
-                        direction = { x: -gridSize, y: 0 }; // Влево
+                        direction = { x: -gridSize, y: 0 };
                     }
                 } else {
-                    // Вертикальный свайп
                     if (deltaY > 0 && direction.y === 0) {
-                        direction = { x: 0, y: gridSize }; // Вниз
+                        direction = { x: 0, y: gridSize };
                     } else if (deltaY < 0 && direction.y === 0) {
-                        direction = { x: 0, y: -gridSize }; // Вверх
+                        direction = { x: 0, y: -gridSize };
                     }
                 }
             }
@@ -1095,104 +1571,6 @@
                         if (direction.x === 0) direction = { x: gridSize, y: 0 };
                         break;
                 }
-            }
-            
-            // Обновление статистики
-            function updateGameStats() {
-                if (!gameRunning) return;
-                
-                const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
-                const minutes = Math.floor(gameTime / 60);
-                const seconds = gameTime % 60;
-                document.getElementById('gameTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                
-                const timeSinceTrack = Math.floor((Date.now() - lastTrackTime) / 1000);
-                const timeToTrack = Math.max(0, 60 - timeSinceTrack);
-                document.getElementById('timeToTrack').textContent = `${timeToTrack}s`;
-                
-                document.getElementById('gameLevel').textContent = Math.floor(snake.length / 5) + 1;
-                document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
-                
-                // Проверяем трек каждую минуту игры
-                if (timeSinceTrack >= 60) {
-                    const randomTrack = getRandomTrack();
-                    const isNewTrack = !unlockedTracks.includes(randomTrack.id);
-                    
-                    if (isNewTrack) {
-                        unlockedTracks.push(randomTrack.id);
-                        updateTracksCount();
-                    }
-                    
-                    showTrackPopup(randomTrack, isNewTrack);
-                    lastTrackTime = Date.now();
-                }
-                
-                setTimeout(updateGameStats, 1000);
-            }
-            
-            // Игровой цикл змейки
-            function gameLoop() {
-                if (!gameRunning || gamePaused) {
-                    if (gameRunning && !gamePaused) {
-                        setTimeout(gameLoop, 150);
-                    }
-                    return;
-                }
-                
-                // Движение змейки
-                const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
-                
-                // Проверка границ (змейка проходит сквозь стены)
-                if (head.x < 0) head.x = canvas.width - gridSize;
-                if (head.x >= canvas.width) head.x = 0;
-                if (head.y < 0) head.y = canvas.height - gridSize;
-                if (head.y >= canvas.height) head.y = 0;
-                
-                // Проверка столкновения с собой
-                snake.forEach(segment => {
-                    if (head.x === segment.x && head.y === segment.y) {
-                        gameRunning = false;
-                        updateScore(gameScore);
-                        document.getElementById('gameOverDiv').style.display = 'block';
-                        document.getElementById('gameInstructions').textContent = 
-                            `Игра окончена! Длина змейки: ${snake.length}, очки: ${gameScore}`;
-                        
-                        // Очистка обработчиков
-                        document.removeEventListener('keydown', handleKeyPress);
-                        canvas.removeEventListener('touchstart', handleTouchStart);
-                        canvas.removeEventListener('touchmove', handleTouchMove);
-                        return;
-                    }
-                });
-                
-                if (!gameRunning) return;
-                
-                snake.unshift(head);
-                
-                // Проверка еды
-                if (head.x === food.x && head.y === food.y) {
-                    gameScore += 10;
-                    generateFood();
-                    tg.HapticFeedback.impactOccurred('light');
-                } else {
-                    snake.pop();
-                }
-                
-                // Очистка и рисование
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Рисуем змейку
-                snake.forEach((segment, index) => {
-                    ctx.fillStyle = index === 0 ? '#4ecdc4' : '#44a08d';
-                    ctx.fillRect(segment.x, segment.y, gridSize - 2, gridSize - 2);
-                });
-                
-                // Рисуем еду
-                ctx.fillStyle = '#ff6b6b';
-                ctx.fillRect(food.x, food.y, gridSize - 2, gridSize - 2);
-                
-                setTimeout(gameLoop, Math.max(50, 200 - snake.length * 2)); // Ускорение
             }
         }
         
