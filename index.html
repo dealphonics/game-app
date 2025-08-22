@@ -316,6 +316,43 @@
         .rarity-epic { background: #9C27B0; color: white; }
         .rarity-legendary { background: #FF9800; color: white; }
         
+        /* ВЫБОР АЛЬБОМА */
+        .album-selector {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+            gap: 10px;
+        }
+        
+        .album-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #4ecdc4;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        
+        .album-btn.active {
+            background: #4ecdc4;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .album-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .album-info {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #888;
+        }
+        
         /* МУЗЫКАЛЬНАЯ КОЛЛЕКЦИЯ */
         .tracks-container {
             text-align: left;
@@ -388,7 +425,12 @@
         
         <div class="score-section">
             <div class="score">Очки: <span id="scoreDisplay">0</span></div>
-            <div style="color: #888; font-size: 10px;">Треков разблокировано: <span id="tracksCount">0</span>/15</div>
+            <div style="color: #888; font-size: 10px;">
+                Треков разблокировано: <span id="tracksCount">0</span>/<span id="totalTracks">34</span>
+            </div>
+            <div style="color: #888; font-size: 10px;">
+                Активный альбом: <span id="activeAlbum">Karmageddon</span>
+            </div>
         </div>
         
         <div class="games-section">
@@ -434,10 +476,21 @@
     <div id="musicModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">🎵 Альбом: Karmageddon</h2>
+                <h2 class="modal-title" id="musicModalTitle">🎵 Музыкальная коллекция</h2>
                 <button class="close" onclick="closeMusicModal()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="album-selector">
+                    <button class="album-btn active" id="albumBtn1" onclick="selectAlbum('karmageddon')">
+                        Karmageddon
+                    </button>
+                    <button class="album-btn" id="albumBtn2" onclick="selectAlbum('psychi')">
+                        Психи попадают в топ
+                    </button>
+                </div>
+                <div class="album-info" id="albumInfo">
+                    15 треков • Альбом 2024
+                </div>
                 <div class="tracks-container" id="tracksList"></div>
             </div>
         </div>
@@ -456,32 +509,66 @@
         let currentGameType = null;
         let gameRunning = false;
         let gamePaused = false;
+        let selectedAlbum = 'karmageddon'; // По умолчанию первый альбом
         
-        // ПРАВИЛЬНЫЙ ТРЕКЛИСТ KARMAGEDDON
-        const karmageddonTracks = [
-            { id: 'track1', title: 'Дежавю', artist: 'Kizaru', rarity: 'legendary', description: 'Мистическое чувство' },
-            { id: 'track2', title: 'Top Dog', artist: 'Kizaru', rarity: 'common', description: 'Лидер стаи' },
-            { id: 'track3', title: 'Водопад', artist: 'Kizaru', rarity: 'rare', description: 'Поток сознания' },
-            { id: 'track4', title: 'Держу район', artist: 'Kizaru', rarity: 'epic', description: 'Власть улиц' },
-            { id: 'track5', title: 'Все что угодно', artist: 'Kizaru', rarity: 'common', description: 'Без границ' },
-            { id: 'track6', title: 'MONEY LONG', artist: 'Kizaru', rarity: 'legendary', description: 'Бесконечные купюры' },
-            { id: 'track7', title: 'Deep End', artist: 'Kizaru', rarity: 'epic', description: 'На глубине' },
-            { id: 'track8', title: 'Сим салабим', artist: 'Kizaru', rarity: 'common', description: 'Магическое заклинание' },
-            { id: 'track9', title: 'Smooth operator', artist: 'Kizaru', rarity: 'rare', description: 'Плавные движения' },
-            { id: 'track10', title: 'Психопат-лунатик', artist: 'Kizaru', rarity: 'epic', description: 'Ночные видения' },
-            { id: 'track11', title: 'Я сделал это', artist: 'Kizaru', rarity: 'common', description: 'Достижение цели' },
-            { id: 'track12', title: 'Ещё одна ночь', artist: 'Kizaru', rarity: 'common', description: 'Бесконечные ночи' },
-            { id: 'track13', title: 'Cinderella', artist: 'Kizaru', rarity: 'rare', description: 'Сказочная история' },
-            { id: 'track14', title: 'На мне детка', artist: 'Kizaru', rarity: 'common', description: 'Стильный образ' },
-            { id: 'track15', title: 'Исповедь', artist: 'Kizaru', rarity: 'rare', description: 'Откровения души' }
-        ];
+        // АЛЬБОМЫ С ТРЕКАМИ
+        const albums = {
+            karmageddon: {
+                name: 'Karmageddon',
+                artist: 'Kizaru',
+                year: '2024',
+                tracks: [
+                    { id: 'k1', title: 'Дежавю', artist: 'Kizaru', rarity: 'legendary', description: 'Мистическое чувство', audioFile: 'karmageddon/dezhavu.mp3' },
+                    { id: 'k2', title: 'Top Dog', artist: 'Kizaru', rarity: 'common', description: 'Лидер стаи', audioFile: 'karmageddon/top_dog.mp3' },
+                    { id: 'k3', title: 'Водопад', artist: 'Kizaru', rarity: 'rare', description: 'Поток сознания', audioFile: 'karmageddon/vodopad.mp3' },
+                    { id: 'k4', title: 'Держу район', artist: 'Kizaru', rarity: 'epic', description: 'Власть улиц', audioFile: 'karmageddon/derzhu_raion.mp3' },
+                    { id: 'k5', title: 'Все что угодно', artist: 'Kizaru', rarity: 'common', description: 'Без границ', audioFile: 'karmageddon/vse_chto_ugodno.mp3' },
+                    { id: 'k6', title: 'MONEY LONG', artist: 'Kizaru', rarity: 'legendary', description: 'Бесконечные купюры', audioFile: 'karmageddon/money_long.mp3' },
+                    { id: 'k7', title: 'Deep End', artist: 'Kizaru', rarity: 'epic', description: 'На глубине', audioFile: 'karmageddon/deep_end.mp3' },
+                    { id: 'k8', title: 'Сим салабим', artist: 'Kizaru', rarity: 'common', description: 'Магическое заклинание', audioFile: 'karmageddon/sim_salabim.mp3' },
+                    { id: 'k9', title: 'Smooth operator', artist: 'Kizaru', rarity: 'rare', description: 'Плавные движения', audioFile: 'karmageddon/smooth_operator.mp3' },
+                    { id: 'k10', title: 'Психопат-лунатик', artist: 'Kizaru', rarity: 'epic', description: 'Ночные видения', audioFile: 'karmageddon/psihopat_lunatik.mp3' },
+                    { id: 'k11', title: 'Я сделал это', artist: 'Kizaru', rarity: 'common', description: 'Достижение цели', audioFile: 'karmageddon/ya_sdelal_eto.mp3' },
+                    { id: 'k12', title: 'Ещё одна ночь', artist: 'Kizaru', rarity: 'common', description: 'Бесконечные ночи', audioFile: 'karmageddon/eshe_odna_noch.mp3' },
+                    { id: 'k13', title: 'Cinderella', artist: 'Kizaru', rarity: 'rare', description: 'Сказочная история', audioFile: 'karmageddon/cinderella.mp3' },
+                    { id: 'k14', title: 'На мне детка', artist: 'Kizaru', rarity: 'common', description: 'Стильный образ', audioFile: 'karmageddon/na_mne_detka.mp3' },
+                    { id: 'k15', title: 'Исповедь', artist: 'Kizaru', rarity: 'rare', description: 'Откровения души', audioFile: 'karmageddon/ispoved.mp3' }
+                ]
+            },
+            psychi: {
+                name: 'Психи попадают в топ',
+                artist: 'Kizaru',
+                year: '2023',
+                tracks: [
+                    { id: 'p1', title: 'Снадобье', artist: 'Kizaru', rarity: 'epic', description: 'Магическое зелье', audioFile: 'psychi/snadobye.mp3' },
+                    { id: 'p2', title: 'Афган', artist: 'Kizaru', rarity: 'legendary', description: 'Далекие земли', audioFile: 'psychi/afgan.mp3' },
+                    { id: 'p3', title: 'Сожжены', artist: 'Kizaru', rarity: 'epic', description: 'Пепел прошлого', audioFile: 'psychi/sozhzheny.mp3' },
+                    { id: 'p4', title: 'Лучший вайб', artist: 'Kizaru', rarity: 'rare', description: 'Идеальная атмосфера', audioFile: 'psychi/luchshiy_vaib.mp3' },
+                    { id: 'p5', title: 'Young haze', artist: 'Kizaru', rarity: 'common', description: 'Молодая дымка', audioFile: 'psychi/young_haze.mp3' },
+                    { id: 'p6', title: 'Улицы без фонарей', artist: 'Kizaru', rarity: 'rare', description: 'Темные переулки', audioFile: 'psychi/ulitsy_bez_fonarey.mp3' },
+                    { id: 'p7', title: 'Так и знал', artist: 'Kizaru', rarity: 'rare', description: 'Предчувствие', audioFile: 'psychi/tak_i_znal.mp3' },
+                    { id: 'p8', title: 'На дому', artist: 'Kizaru', rarity: 'rare', description: 'Домашняя обстановка', audioFile: 'psychi/na_domu.mp3' },
+                    { id: 'p9', title: 'Animals', artist: 'Kizaru', rarity: 'common', description: 'Дикие инстинкты', audioFile: 'psychi/animals.mp3' },
+                    { id: 'p10', title: 'Заправка', artist: 'Kizaru', rarity: 'common', description: 'Остановка в пути', audioFile: 'psychi/zapravka.mp3' },
+                    { id: 'p11', title: 'Балконы', artist: 'Kizaru', rarity: 'epic', description: 'Вид сверху', audioFile: 'psychi/balkony.mp3' },
+                    { id: 'p12', title: 'Карманы', artist: 'Kizaru', rarity: 'common', description: 'Глубокие секреты', audioFile: 'psychi/karmany.mp3' },
+                    { id: 'p13', title: 'Доверял', artist: 'Kizaru', rarity: 'rare', description: 'Разбитые иллюзии', audioFile: 'psychi/doveryal.mp3' },
+                    { id: 'p14', title: 'Воля', artist: 'Kizaru', rarity: 'epic', description: 'Внутренняя сила', audioFile: 'psychi/volya.mp3' },
+                    { id: 'p15', title: 'Тонкая красная нить', artist: 'Kizaru', rarity: 'common', description: 'Связующее звено', audioFile: 'psychi/tonkaya_krasnaya_nit.mp3' },
+                    { id: 'p16', title: 'Жизнь не Голливуд', artist: 'Kizaru', rarity: 'epic', description: 'Суровая реальность', audioFile: 'psychi/zhizn_ne_gollivud.mp3' },
+                    { id: 'p17', title: 'Исключение', artist: 'Kizaru', rarity: 'common', description: 'Особый случай', audioFile: 'psychi/isklyuchenie.mp3' },
+                    { id: 'p18', title: '17 лет', artist: 'Kizaru', rarity: 'legendary', description: 'Юные годы', audioFile: 'psychi/17_let.mp3' },
+                    { id: 'p19', title: 'Не говорите другу никогда', artist: 'Kizaru', rarity: 'common', description: 'Тайны дружбы', audioFile: 'psychi/ne_govorite_drugu_nikogda.mp3' }
+                ]
+            }
+        };
         
         // Вероятности выпадения по редкости
         const rarityChances = {
-            'common': 65,      // 6 треков
-            'rare': 20,        // 4 трека 
-            'epic': 10,        // 3 трека
-            'legendary': 5     // 2 трека
+            'common': 65,
+            'rare': 20,
+            'epic': 10,
+            'legendary': 5
         };
         
         // Цвета редкости
@@ -500,12 +587,44 @@
             'legendary': 'Легендарный'
         };
         
-        // 20 РАЗНЫХ ПАТТЕРНОВ БЛОКОВ
+        // Иконки для разблокированных треков
+        const unlockedIcons = ['🎵', '🎶', '🎼', '🎤', '🎧', '💿', '📀', '🎺', '🎸', '🥁'];
+        
+        // АВТОСОХРАНЕНИЕ
+        function saveProgress() {
+            const progressData = {
+                userScore: userScore,
+                unlockedTracks: unlockedTracks,
+                selectedAlbum: selectedAlbum,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('soundkeeper_progress', JSON.stringify(progressData));
+        }
+        
+        function loadProgress() {
+            const saved = localStorage.getItem('soundkeeper_progress');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    userScore = data.userScore || 0;
+                    unlockedTracks = data.unlockedTracks || [];
+                    selectedAlbum = data.selectedAlbum || 'karmageddon';
+                    
+                    // Обновляем отображение
+                    document.getElementById('scoreDisplay').textContent = userScore;
+                    updateTracksCount();
+                    updateActiveAlbum();
+                    
+                    console.log('Прогресс загружен:', data);
+                } catch (e) {
+                    console.error('Ошибка загрузки прогресса:', e);
+                }
+            }
+        }
+        
+        // 20 РАЗНЫХ ПАТТЕРНОВ БЛОКОВ (сокращенная версия)
         const blockPatterns = [
-            // Паттерн 1: Простая стена
             () => { return { rows: 4, cols: 7, pattern: 'full' }; },
-            
-            // Паттерн 2: Пирамида
             () => { 
                 const blocks = [];
                 for (let row = 0; row < 5; row++) {
@@ -517,8 +636,6 @@
                 }
                 return { custom: blocks };
             },
-            
-            // Паттерн 3: Буква W
             () => {
                 const blocks = [];
                 const pattern = [
@@ -536,8 +653,6 @@
                 }
                 return { custom: blocks };
             },
-            
-            // Паттерн 4: Шахматная доска
             () => {
                 const blocks = [];
                 for (let row = 0; row < 4; row++) {
@@ -548,74 +663,12 @@
                     }
                 }
                 return { custom: blocks };
-            },
-            
-            // Паттерн 5: Крест
-            () => {
-                const blocks = [];
-                for (let row = 0; row < 5; row++) {
-                    blocks.push({ row: row, col: 3 }); // Вертикальная линия
-                }
-                for (let col = 0; col < 7; col++) {
-                    blocks.push({ row: 2, col: col }); // Горизонтальная линия
-                }
-                return { custom: blocks };
-            },
-            
-            // Паттерн 6: Круг
-            () => {
-                const blocks = [];
-                const centerX = 3, centerY = 2, radius = 2;
-                for (let row = 0; row < 5; row++) {
-                    for (let col = 0; col < 7; col++) {
-                        const distance = Math.sqrt((col - centerX) ** 2 + (row - centerY) ** 2);
-                        if (distance <= radius && distance >= radius - 1) {
-                            blocks.push({ row: row, col: col });
-                        }
-                    }
-                }
-                return { custom: blocks };
-            },
-            
-            // Паттерн 7: Зигзаг
-            () => {
-                const blocks = [];
-                for (let col = 0; col < 7; col++) {
-                    const row = col % 2 === 0 ? 0 : 2;
-                    blocks.push({ row: row, col: col });
-                    blocks.push({ row: row + 1, col: col });
-                }
-                return { custom: blocks };
-            },
-            
-            // Паттерн 8: Дуги
-            () => {
-                const blocks = [];
-                const pattern = [
-                    [0,1,1,1,1,1,0],
-                    [1,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,1],
-                    [0,1,1,1,1,1,0]
-                ];
-                for (let row = 0; row < pattern.length; row++) {
-                    for (let col = 0; col < pattern[row].length; col++) {
-                        if (pattern[row][col]) {
-                            blocks.push({ row: row, col: col });
-                        }
-                    }
-                }
-                return { custom: blocks };
-            },
-            
-            // Остальные 12 паттернов сокращены для экономии места...
-            () => { return { rows: 3, cols: 7, pattern: 'full' }; },
-            () => { return { rows: 5, cols: 7, pattern: 'full' }; },
-            () => { return { rows: 4, cols: 6, pattern: 'full' }; },
-            () => { return { rows: 6, cols: 6, pattern: 'full' }; }
+            }
         ];
         
-        // Получение случайного трека по редкости
+        // Получение случайного трека из выбранного альбома
         function getRandomTrack() {
+            const currentAlbum = albums[selectedAlbum];
             const random = Math.random() * 100;
             let rarity;
             
@@ -629,7 +682,7 @@
                 rarity = 'common';
             }
             
-            const tracksOfRarity = karmageddonTracks.filter(track => track.rarity === rarity);
+            const tracksOfRarity = currentAlbum.tracks.filter(track => track.rarity === rarity);
             return tracksOfRarity[Math.floor(Math.random() * tracksOfRarity.length)];
         }
         
@@ -638,11 +691,43 @@
             userScore += points;
             document.getElementById('scoreDisplay').textContent = userScore;
             updateTracksCount();
+            saveProgress(); // Автосохранение
         }
         
         // Обновление счетчика треков
         function updateTracksCount() {
+            const totalTracks = albums.karmageddon.tracks.length + albums.psychi.tracks.length;
             document.getElementById('tracksCount').textContent = unlockedTracks.length;
+            document.getElementById('totalTracks').textContent = totalTracks;
+        }
+        
+        // Обновление активного альбома
+        function updateActiveAlbum() {
+            document.getElementById('activeAlbum').textContent = albums[selectedAlbum].name;
+        }
+        
+        // Выбор альбома
+        function selectAlbum(albumId) {
+            selectedAlbum = albumId;
+            
+            // Обновляем кнопки
+            document.querySelectorAll('.album-btn').forEach(btn => btn.classList.remove('active'));
+            if (albumId === 'karmageddon') {
+                document.getElementById('albumBtn1').classList.add('active');
+            } else {
+                document.getElementById('albumBtn2').classList.add('active');
+            }
+            
+            // Обновляем информацию об альбоме
+            const album = albums[albumId];
+            document.getElementById('albumInfo').textContent = 
+                `${album.tracks.length} треков • Альбом ${album.year}`;
+            
+            document.getElementById('musicModalTitle').textContent = `🎵 ${album.name}`;
+            
+            updateActiveAlbum();
+            updateMusicList();
+            saveProgress(); // Автосохранение
         }
         
         // Открытие игрового модального окна
@@ -684,7 +769,9 @@
         function openMusicModal() {
             const modal = document.getElementById('musicModal');
             modal.style.display = 'block';
-            updateMusicList();
+            
+            // Устанавливаем активный альбом
+            selectAlbum(selectedAlbum);
         }
         
         // Закрытие музыкального модального окна
@@ -695,18 +782,23 @@
         // Обновление списка музыки
         function updateMusicList() {
             const tracksList = document.getElementById('tracksList');
+            const currentAlbum = albums[selectedAlbum];
             let tracksHTML = '';
             
-            karmageddonTracks.forEach(track => {
+            currentAlbum.tracks.forEach((track, index) => {
                 const isUnlocked = unlockedTracks.includes(track.id);
-                const lockIcon = isUnlocked ? '🔓' : '🔒';
-                const trackClass = isUnlocked ? '' : 'locked';
                 const rarityClass = `rarity-${track.rarity}`;
+                const trackClass = isUnlocked ? '' : 'locked';
+                
+                // Для разблокированных треков используем случайную иконку
+                const icon = isUnlocked ? 
+                    unlockedIcons[index % unlockedIcons.length] : 
+                    '🔒';
                 
                 tracksHTML += `
                     <div class="track-item ${trackClass}">
                         <div class="track-info">
-                            <div class="track-title">${lockIcon} ${track.title}</div>
+                            <div class="track-title">${icon} ${track.title}</div>
                             <div class="track-details">
                                 ${track.artist}${isUnlocked ? ' • ' + track.description : ''}
                                 ${isUnlocked ? `<br><span class="rarity-badge ${rarityClass}">${rarityNames[track.rarity]}</span>` : ''}
@@ -714,7 +806,7 @@
                         </div>
                         <button class="play-btn" 
                                 ${!isUnlocked ? 'disabled' : ''} 
-                                onclick="playTrack('${track.id}', '${track.title}', '${track.artist}')">
+                                onclick="playTrack('${track.id}', '${track.title}', '${track.artist}', '${track.audioFile}')">
                             ${isUnlocked ? '▶️' : '🔒'}
                         </button>
                     </div>
@@ -725,14 +817,42 @@
         }
         
         // Воспроизведение трека
-        function playTrack(trackId, trackTitle, trackArtist) {
+        function playTrack(trackId, trackTitle, trackArtist, audioFile) {
             tg.HapticFeedback.impactOccurred('light');
-            tg.showAlert(`🎵 Сейчас играет:\n${trackTitle} - ${trackArtist}`);
+            
+            // Пытаемся воспроизвести аудио файл
+            try {
+                // Останавливаем предыдущий трек если играет
+                if (window.currentAudio) {
+                    window.currentAudio.pause();
+                    window.currentAudio = null;
+                }
+                
+                // Создаем новый аудио элемент
+                const audio = new Audio(audioFile);
+                audio.volume = 0.7;
+                
+                audio.play().then(() => {
+                    window.currentAudio = audio;
+                    tg.showAlert(`🎵 Играет: ${trackTitle} - ${trackArtist}`);
+                }).catch(() => {
+                    // Если файл не найден, показываем уведомление
+                    tg.showAlert(`🎵 ${trackTitle} - ${trackArtist}\n(Аудио файл не загружен)`);
+                });
+                
+                // Автоматически убираем ссылку на аудио когда трек закончится
+                audio.addEventListener('ended', () => {
+                    window.currentAudio = null;
+                });
+                
+            } catch (error) {
+                tg.showAlert(`🎵 ${trackTitle} - ${trackArtist}\n(Аудио файл не найден)`);
+            }
         }
         
         // Показать всплывающее окно трека
         function showTrackPopup(track, isNew) {
-            gamePaused = true; // Останавливаем игру на время всплывающего окна
+            gamePaused = true;
             
             const popup = document.createElement('div');
             popup.className = 'track-popup';
@@ -756,6 +876,7 @@
             
             if (isNew) {
                 tg.HapticFeedback.impactOccurred('heavy');
+                saveProgress(); // Автосохранение при получении нового трека
             } else {
                 tg.HapticFeedback.impactOccurred('light');
             }
@@ -764,29 +885,26 @@
         // Закрыть всплывающее окно трека
         function closeTrackPopup(button) {
             button.parentElement.remove();
-            gamePaused = false; // Возобновляем игру
+            gamePaused = false;
         }
         
-        // АРКАНОИД ИГРА (ПОЛНОСТЬЮ ПЕРЕРАБОТАННАЯ ЛОГИКА ПЕРЕХОДОВ)
+        // АРКАНОИД ИГРА (та же логика, что и раньше)
         function startArkanoidGame() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
             
-            // Сброс UI
             document.getElementById('gameOverDiv').style.display = 'none';
             document.getElementById('gameInstructions').textContent = 'Приготовься...';
             document.getElementById('levelTransitionDiv').innerHTML = '';
             
-            // Игровые переменные
             let gameScore = 0;
             let gameLevel = 1;
             let gameStartTime = Date.now();
             let lastTrackTime = Date.now();
             let baseSpeed = 2.5;
             let ballSpeed = baseSpeed;
-            let levelTransitionActive = false; // НОВЫЙ ФЛАГ
+            let levelTransitionActive = false;
             
-            // Объекты игры
             let ball = { x: canvas.width/2, y: canvas.height - 60, dx: 0, dy: 0, radius: 6 };
             let paddle = { x: canvas.width/2 - 30, y: canvas.height - 30, width: 60, height: 8 };
             let blocks = [];
@@ -795,7 +913,6 @@
             gameRunning = false;
             gamePaused = false;
             
-            // Таймер подготовки
             let countdown = 3;
             showCountdown();
             
@@ -817,15 +934,12 @@
             
             function startGame() {
                 gameRunning = true;
-                
-                // Мяч летит от игрока
                 resetBall();
                 generateBlocks();
                 gameLoop();
                 updateGameStats();
             }
             
-            // НОВАЯ ФУНКЦИЯ: Сброс мяча в стартовую позицию
             function resetBall() {
                 ball.x = canvas.width/2;
                 ball.y = canvas.height - 60;
@@ -834,12 +948,10 @@
                 ball.dy = -Math.cos(angle) * ballSpeed;
             }
             
-            // Генерация блоков с использованием паттернов
             function generateBlocks() {
                 blocks = [];
                 const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#e17055'];
                 
-                // Выбираем случайный паттерн
                 const patternIndex = Math.floor(Math.random() * blockPatterns.length);
                 const pattern = blockPatterns[patternIndex]();
                 
@@ -850,7 +962,6 @@
                 const offsetY = 20;
                 
                 if (pattern.custom) {
-                    // Кастомный паттерн
                     pattern.custom.forEach(pos => {
                         if (pos.row >= 0 && pos.col >= 0 && pos.col < 7) {
                             blocks.push({
@@ -865,7 +976,6 @@
                         }
                     });
                 } else {
-                    // Стандартный паттерн
                     const rows = pattern.rows || 4;
                     const cols = pattern.cols || 7;
                     
@@ -885,21 +995,18 @@
                 }
             }
             
-            // НОВАЯ ФУНКЦИЯ: Переход на следующий уровень
             function nextLevel() {
-                if (levelTransitionActive) return; // Предотвращаем двойной вызов
+                if (levelTransitionActive) return;
                 
                 levelTransitionActive = true;
                 gameLevel++;
                 
-                // Ускорение каждые 3 уровня
                 if (gameLevel % 3 === 1) {
                     ballSpeed += 0.4;
                 }
                 
                 gameScore += 100;
                 
-                // Показываем переход
                 const transitionDiv = document.getElementById('levelTransitionDiv');
                 transitionDiv.innerHTML = `
                     <div class="level-transition">
@@ -908,16 +1015,14 @@
                     </div>
                 `;
                 
-                // Через 2.5 секунды возобновляем игру
                 setTimeout(() => {
                     transitionDiv.innerHTML = '';
-                    generateBlocks(); // Генерируем новые блоки
-                    resetBall(); // Возвращаем мяч
-                    levelTransitionActive = false; // ВАЖНО: сбрасываем флаг
+                    generateBlocks();
+                    resetBall();
+                    levelTransitionActive = false;
                 }, 2500);
             }
             
-            // Управление
             canvas.addEventListener('mousemove', movePaddle);
             canvas.addEventListener('touchmove', movePaddle);
             
@@ -930,7 +1035,6 @@
                 paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
             }
             
-            // Обновление статистики
             function updateGameStats() {
                 if (!gameRunning) return;
                 
@@ -946,7 +1050,6 @@
                 document.getElementById('gameLevel').textContent = gameLevel;
                 document.getElementById('currentGameScore').textContent = `Очки: ${gameScore}`;
                 
-                // Пластинка появляется тихо каждую минуту
                 if (timeSinceTrack >= 60 && !vinylRecord && !levelTransitionActive) {
                     createVinylRecord();
                 }
@@ -954,7 +1057,6 @@
                 setTimeout(updateGameStats, 1000);
             }
             
-            // Создание пластинки
             function createVinylRecord() {
                 vinylRecord = {
                     x: Math.random() * (canvas.width - 60) + 30,
@@ -970,26 +1072,21 @@
                 };
             }
             
-            // ОСНОВНОЙ ИГРОВОЙ ЦИКЛ
             function gameLoop() {
-                if (!gameRunning) return; // Выходим если игра остановлена
+                if (!gameRunning) return;
                 
-                // Очистка
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Если идет переход уровня - только рисуем статические объекты
                 if (levelTransitionActive || gamePaused) {
                     drawStaticObjects();
                     requestAnimationFrame(gameLoop);
                     return;
                 }
                 
-                // Движение мяча
                 ball.x += ball.dx;
                 ball.y += ball.dy;
                 
-                // Отскоки от стен
                 if (ball.x - ball.radius <= 0) {
                     ball.x = ball.radius;
                     ball.dx = Math.abs(ball.dx);
@@ -1003,7 +1100,6 @@
                     ball.dy = Math.abs(ball.dy);
                 }
                 
-                // Отскок от платформы
                 if (ball.y + ball.radius >= paddle.y && 
                     ball.x >= paddle.x && 
                     ball.x <= paddle.x + paddle.width &&
@@ -1018,7 +1114,6 @@
                     tg.HapticFeedback.impactOccurred('light');
                 }
                 
-                // Проигрыш
                 if (ball.y > canvas.height) {
                     gameRunning = false;
                     updateScore(gameScore);
@@ -1028,7 +1123,6 @@
                     return;
                 }
                 
-                // Коллизия с блоками
                 blocks.forEach(block => {
                     if (block.active && 
                         ball.x - ball.radius < block.x + block.width &&
@@ -1049,7 +1143,6 @@
                     }
                 });
                 
-                // Движение пластинки
                 if (vinylRecord) {
                     const targetDx = vinylRecord.targetX - vinylRecord.x;
                     const targetDy = vinylRecord.targetY - vinylRecord.y;
@@ -1074,7 +1167,6 @@
                     vinylRecord.x = Math.max(vinylRecord.radius + 5, Math.min(canvas.width - vinylRecord.radius - 5, vinylRecord.x));
                     vinylRecord.y = Math.max(vinylRecord.radius + 5, Math.min(canvas.height - 80, vinylRecord.y));
                     
-                    // Коллизия с пластинкой
                     const dx = ball.x - vinylRecord.x;
                     const dy = ball.y - vinylRecord.y;
                     const collisionDistance = Math.sqrt(dx * dx + dy * dy);
@@ -1101,34 +1193,27 @@
                     }
                 }
                 
-                // ПРОВЕРКА ПЕРЕХОДА НА СЛЕДУЮЩИЙ УРОВЕНЬ
                 const activeBlocks = blocks.filter(block => block.active);
                 if (activeBlocks.length === 0 && !levelTransitionActive) {
-                    nextLevel(); // Вызываем функцию перехода
+                    nextLevel();
                 }
                 
-                // Рисование всех объектов
                 drawStaticObjects();
-                
                 requestAnimationFrame(gameLoop);
             }
             
-            // ФУНКЦИЯ РИСОВАНИЯ СТАТИЧЕСКИХ ОБЪЕКТОВ
             function drawStaticObjects() {
-                // Мяч
                 ctx.fillStyle = '#ff4444';
                 ctx.beginPath();
                 ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Платформа
                 const gradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y);
                 gradient.addColorStop(0, '#4ecdc4');
                 gradient.addColorStop(1, '#44a08d');
                 ctx.fillStyle = gradient;
                 ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
                 
-                // Блоки
                 blocks.forEach(block => {
                     if (block.active) {
                         ctx.fillStyle = block.color;
@@ -1146,7 +1231,6 @@
                     }
                 });
                 
-                // Пластинка
                 if (vinylRecord) {
                     ctx.save();
                     ctx.translate(vinylRecord.x, vinylRecord.y);
@@ -1196,8 +1280,12 @@
             }
         }
         
-        // Инициализация
-        updateTracksCount();
+        // Инициализация при загрузке страницы
+        window.onload = function() {
+            loadProgress(); // Загружаем сохраненный прогресс
+            updateTracksCount();
+            updateActiveAlbum();
+        };
     </script>
 </body>
 </html>
