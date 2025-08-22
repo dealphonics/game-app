@@ -346,6 +346,71 @@
             transform: scale(1.05);
         }
         
+        /* ОБЛОЖКА АЛЬБОМА */
+        .album-cover {
+            width: 120px;
+            height: 120px;
+            margin: 15px auto;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.3);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .album-cover:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(78, 205, 196, 0.4);
+        }
+        
+        .album-cover.karmageddon {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+        
+        .album-cover.karmageddon:hover {
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+        }
+        
+        .album-cover.psychi {
+            background: linear-gradient(135deg, #9C27B0, #673AB7);
+            box-shadow: 0 8px 25px rgba(156, 39, 176, 0.3);
+        }
+        
+        .album-cover.psychi:hover {
+            box-shadow: 0 12px 35px rgba(156, 39, 176, 0.4);
+        }
+        
+        /* Эффект виниловой пластинки */
+        .album-cover::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .album-cover::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
         .album-info {
             text-align: center;
             margin: 10px 0;
@@ -429,7 +494,7 @@
                 Треков разблокировано: <span id="tracksCount">0</span>/<span id="totalTracks">34</span>
             </div>
             <div style="color: #888; font-size: 10px;">
-                Активный альбом: <span id="activeAlbum">Karmageddon</span>
+                Активный альбом: <span id="activeAlbum">📀 Karmageddon</span>
             </div>
         </div>
         
@@ -476,7 +541,7 @@
     <div id="musicModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="musicModalTitle">🎵 Музыкальная коллекция</h2>
+                <h2 class="modal-title" id="musicModalTitle">📀 Karmageddon</h2>
                 <button class="close" onclick="closeMusicModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -488,9 +553,15 @@
                         Психи попадают в топ
                     </button>
                 </div>
+                
+                <div class="album-cover karmageddon" id="albumCover">
+                    🎭
+                </div>
+                
                 <div class="album-info" id="albumInfo">
                     15 треков • Альбом 2024
                 </div>
+                
                 <div class="tracks-container" id="tracksList"></div>
             </div>
         </div>
@@ -509,56 +580,60 @@
         let currentGameType = null;
         let gameRunning = false;
         let gamePaused = false;
-        let selectedAlbum = 'karmageddon'; // По умолчанию первый альбом
+        let selectedAlbum = 'karmageddon';
         
-        // АЛЬБОМЫ С ТРЕКАМИ
+        // АЛЬБОМЫ С ТРЕКАМИ (ИСПРАВЛЕННЫЕ)
         const albums = {
             karmageddon: {
                 name: 'Karmageddon',
                 artist: 'Kizaru',
                 year: '2024',
+                coverIcon: '🎭',
+                coverClass: 'karmageddon',
                 tracks: [
-                    { id: 'k1', title: 'Дежавю', artist: 'Kizaru', rarity: 'legendary', description: 'Мистическое чувство', audioFile: 'karmageddon/dezhavu.mp3' },
-                    { id: 'k2', title: 'Top Dog', artist: 'Kizaru', rarity: 'common', description: 'Лидер стаи', audioFile: 'karmageddon/top_dog.mp3' },
-                    { id: 'k3', title: 'Водопад', artist: 'Kizaru', rarity: 'rare', description: 'Поток сознания', audioFile: 'karmageddon/vodopad.mp3' },
-                    { id: 'k4', title: 'Держу район', artist: 'Kizaru', rarity: 'epic', description: 'Власть улиц', audioFile: 'karmageddon/derzhu_raion.mp3' },
-                    { id: 'k5', title: 'Все что угодно', artist: 'Kizaru', rarity: 'common', description: 'Без границ', audioFile: 'karmageddon/vse_chto_ugodno.mp3' },
-                    { id: 'k6', title: 'MONEY LONG', artist: 'Kizaru', rarity: 'legendary', description: 'Бесконечные купюры', audioFile: 'karmageddon/money_long.mp3' },
-                    { id: 'k7', title: 'Deep End', artist: 'Kizaru', rarity: 'epic', description: 'На глубине', audioFile: 'karmageddon/deep_end.mp3' },
-                    { id: 'k8', title: 'Сим салабим', artist: 'Kizaru', rarity: 'common', description: 'Магическое заклинание', audioFile: 'karmageddon/sim_salabim.mp3' },
-                    { id: 'k9', title: 'Smooth operator', artist: 'Kizaru', rarity: 'rare', description: 'Плавные движения', audioFile: 'karmageddon/smooth_operator.mp3' },
-                    { id: 'k10', title: 'Психопат-лунатик', artist: 'Kizaru', rarity: 'epic', description: 'Ночные видения', audioFile: 'karmageddon/psihopat_lunatik.mp3' },
-                    { id: 'k11', title: 'Я сделал это', artist: 'Kizaru', rarity: 'common', description: 'Достижение цели', audioFile: 'karmageddon/ya_sdelal_eto.mp3' },
-                    { id: 'k12', title: 'Ещё одна ночь', artist: 'Kizaru', rarity: 'common', description: 'Бесконечные ночи', audioFile: 'karmageddon/eshe_odna_noch.mp3' },
-                    { id: 'k13', title: 'Cinderella', artist: 'Kizaru', rarity: 'rare', description: 'Сказочная история', audioFile: 'karmageddon/cinderella.mp3' },
-                    { id: 'k14', title: 'На мне детка', artist: 'Kizaru', rarity: 'common', description: 'Стильный образ', audioFile: 'karmageddon/na_mne_detka.mp3' },
-                    { id: 'k15', title: 'Исповедь', artist: 'Kizaru', rarity: 'rare', description: 'Откровения души', audioFile: 'karmageddon/ispoved.mp3' }
+                    { id: 'k1', title: 'Дежавю', artist: 'Kizaru', rarity: 'legendary', audioFile: 'karmageddon/dezhavu.mp3' },
+                    { id: 'k2', title: 'Top Dog', artist: 'Kizaru', rarity: 'common', audioFile: 'karmageddon/top_dog.mp3' },
+                    { id: 'k3', title: 'Водопад', artist: 'Kizaru', rarity: 'rare', audioFile: 'karmageddon/vodopad.mp3' },
+                    { id: 'k4', title: 'Держу район', artist: 'Kizaru', rarity: 'epic', audioFile: 'karmageddon/derzhu_raion.mp3' },
+                    { id: 'k5', title: 'Все что угодно', artist: 'Kizaru', rarity: 'common', audioFile: 'karmageddon/vse_chto_ugodno.mp3' },
+                    { id: 'k6', title: 'MONEY LONG', artist: 'Kizaru', rarity: 'legendary', audioFile: 'karmageddon/money_long.mp3' },
+                    { id: 'k7', title: 'Deep End', artist: 'Kizaru', rarity: 'epic', audioFile: 'karmageddon/deep_end.mp3' },
+                    { id: 'k8', title: 'Сим салабим', artist: 'Kizaru', rarity: 'common', audioFile: 'karmageddon/sim_salabim.mp3' },
+                    { id: 'k9', title: 'Smooth operator', artist: 'Kizaru', rarity: 'rare', audioFile: 'karmageddon/smooth_operator.mp3' },
+                    { id: 'k10', title: 'Психопат-лунатик', artist: 'Kizaru', rarity: 'epic', audioFile: 'karmageddon/psihopat_lunatik.mp3' },
+                    { id: 'k11', title: 'Я сделал это', artist: 'Kizaru', rarity: 'common', audioFile: 'karmageddon/ya_sdelal_eto.mp3' },
+                    { id: 'k12', title: 'Ещё одна ночь', artist: 'Kizaru', rarity: 'common', audioFile: 'karmageddon/eshe_odna_noch.mp3' },
+                    { id: 'k13', title: 'Cinderella', artist: 'Kizaru', rarity: 'rare', audioFile: 'karmageddon/cinderella.mp3' },
+                    { id: 'k14', title: 'На мне детка', artist: 'Kizaru', rarity: 'common', audioFile: 'karmageddon/na_mne_detka.mp3' },
+                    { id: 'k15', title: 'Исповедь', artist: 'Kizaru', rarity: 'rare', audioFile: 'karmageddon/ispoved.mp3' }
                 ]
             },
             psychi: {
                 name: 'Психи попадают в топ',
-                artist: 'Kizaru',
+                artist: 'Макс Корж', // ИСПРАВЛЕНО!
                 year: '2023',
+                coverIcon: '🧠',
+                coverClass: 'psychi',
                 tracks: [
-                    { id: 'p1', title: 'Снадобье', artist: 'Kizaru', rarity: 'epic', description: 'Магическое зелье', audioFile: 'psychi/snadobye.mp3' },
-                    { id: 'p2', title: 'Афган', artist: 'Kizaru', rarity: 'legendary', description: 'Далекие земли', audioFile: 'psychi/afgan.mp3' },
-                    { id: 'p3', title: 'Сожжены', artist: 'Kizaru', rarity: 'epic', description: 'Пепел прошлого', audioFile: 'psychi/sozhzheny.mp3' },
-                    { id: 'p4', title: 'Лучший вайб', artist: 'Kizaru', rarity: 'rare', description: 'Идеальная атмосфера', audioFile: 'psychi/luchshiy_vaib.mp3' },
-                    { id: 'p5', title: 'Young haze', artist: 'Kizaru', rarity: 'common', description: 'Молодая дымка', audioFile: 'psychi/young_haze.mp3' },
-                    { id: 'p6', title: 'Улицы без фонарей', artist: 'Kizaru', rarity: 'rare', description: 'Темные переулки', audioFile: 'psychi/ulitsy_bez_fonarey.mp3' },
-                    { id: 'p7', title: 'Так и знал', artist: 'Kizaru', rarity: 'rare', description: 'Предчувствие', audioFile: 'psychi/tak_i_znal.mp3' },
-                    { id: 'p8', title: 'На дому', artist: 'Kizaru', rarity: 'rare', description: 'Домашняя обстановка', audioFile: 'psychi/na_domu.mp3' },
-                    { id: 'p9', title: 'Animals', artist: 'Kizaru', rarity: 'common', description: 'Дикие инстинкты', audioFile: 'psychi/animals.mp3' },
-                    { id: 'p10', title: 'Заправка', artist: 'Kizaru', rarity: 'common', description: 'Остановка в пути', audioFile: 'psychi/zapravka.mp3' },
-                    { id: 'p11', title: 'Балконы', artist: 'Kizaru', rarity: 'epic', description: 'Вид сверху', audioFile: 'psychi/balkony.mp3' },
-                    { id: 'p12', title: 'Карманы', artist: 'Kizaru', rarity: 'common', description: 'Глубокие секреты', audioFile: 'psychi/karmany.mp3' },
-                    { id: 'p13', title: 'Доверял', artist: 'Kizaru', rarity: 'rare', description: 'Разбитые иллюзии', audioFile: 'psychi/doveryal.mp3' },
-                    { id: 'p14', title: 'Воля', artist: 'Kizaru', rarity: 'epic', description: 'Внутренняя сила', audioFile: 'psychi/volya.mp3' },
-                    { id: 'p15', title: 'Тонкая красная нить', artist: 'Kizaru', rarity: 'common', description: 'Связующее звено', audioFile: 'psychi/tonkaya_krasnaya_nit.mp3' },
-                    { id: 'p16', title: 'Жизнь не Голливуд', artist: 'Kizaru', rarity: 'epic', description: 'Суровая реальность', audioFile: 'psychi/zhizn_ne_gollivud.mp3' },
-                    { id: 'p17', title: 'Исключение', artist: 'Kizaru', rarity: 'common', description: 'Особый случай', audioFile: 'psychi/isklyuchenie.mp3' },
-                    { id: 'p18', title: '17 лет', artist: 'Kizaru', rarity: 'legendary', description: 'Юные годы', audioFile: 'psychi/17_let.mp3' },
-                    { id: 'p19', title: 'Не говорите другу никогда', artist: 'Kizaru', rarity: 'common', description: 'Тайны дружбы', audioFile: 'psychi/ne_govorite_drugu_nikogda.mp3' }
+                    { id: 'p1', title: 'Снадобье', artist: 'Макс Корж', rarity: 'epic', audioFile: 'psychi/snadobye.mp3' },
+                    { id: 'p2', title: 'Афган', artist: 'Макс Корж', rarity: 'legendary', audioFile: 'psychi/afgan.mp3' },
+                    { id: 'p3', title: 'Сожжены', artist: 'Макс Корж', rarity: 'epic', audioFile: 'psychi/sozhzheny.mp3' },
+                    { id: 'p4', title: 'Лучший вайб', artist: 'Макс Корж', rarity: 'rare', audioFile: 'psychi/luchshiy_vaib.mp3' },
+                    { id: 'p5', title: 'Young haze', artist: 'Макс Корж', rarity: 'common', audioFile: 'psychi/young_haze.mp3' },
+                    { id: 'p6', title: 'Улицы без фонарей', artist: 'Макс Корж', rarity: 'rare', audioFile: 'psychi/ulitsy_bez_fonarey.mp3' },
+                    { id: 'p7', title: 'Так и знал', artist: 'Макс Корж', rarity: 'rare', audioFile: 'psychi/tak_i_znal.mp3' },
+                    { id: 'p8', title: 'На дому', artist: 'Макс Корж', rarity: 'rare', audioFile: 'psychi/na_domu.mp3' },
+                    { id: 'p9', title: 'Animals', artist: 'Макс Корж', rarity: 'common', audioFile: 'psychi/animals.mp3' },
+                    { id: 'p10', title: 'Заправка', artist: 'Макс Корж', rarity: 'common', audioFile: 'psychi/zapravka.mp3' },
+                    { id: 'p11', title: 'Балконы', artist: 'Макс Корж', rarity: 'epic', audioFile: 'psychi/balkony.mp3' },
+                    { id: 'p12', title: 'Карманы', artist: 'Макс Корж', rarity: 'common', audioFile: 'psychi/karmany.mp3' },
+                    { id: 'p13', title: 'Доверял', artist: 'Макс Корж', rarity: 'rare', audioFile: 'psychi/doveryal.mp3' },
+                    { id: 'p14', title: 'Воля', artist: 'Макс Корж', rarity: 'epic', audioFile: 'psychi/volya.mp3' },
+                    { id: 'p15', title: 'Тонкая красная нить', artist: 'Макс Корж', rarity: 'common', audioFile: 'psychi/tonkaya_krasnaya_nit.mp3' },
+                    { id: 'p16', title: 'Жизнь не Голливуд', artist: 'Макс Корж', rarity: 'epic', audioFile: 'psychi/zhizn_ne_gollivud.mp3' },
+                    { id: 'p17', title: 'Исключение', artist: 'Макс Корж', rarity: 'common', audioFile: 'psychi/isklyuchenie.mp3' },
+                    { id: 'p18', title: '17 лет', artist: 'Макс Корж', rarity: 'legendary', audioFile: 'psychi/17_let.mp3' },
+                    { id: 'p19', title: 'Не говорите другу никогда', artist: 'Макс Корж', rarity: 'common', audioFile: 'psychi/ne_govorite_drugu_nikogda.mp3' }
                 ]
             }
         };
@@ -587,9 +662,6 @@
             'legendary': 'Легендарный'
         };
         
-        // Иконки для разблокированных треков
-        const unlockedIcons = ['🎵', '🎶', '🎼', '🎤', '🎧', '💿', '📀', '🎺', '🎸', '🥁'];
-        
         // АВТОСОХРАНЕНИЕ
         function saveProgress() {
             const progressData = {
@@ -610,7 +682,6 @@
                     unlockedTracks = data.unlockedTracks || [];
                     selectedAlbum = data.selectedAlbum || 'karmageddon';
                     
-                    // Обновляем отображение
                     document.getElementById('scoreDisplay').textContent = userScore;
                     updateTracksCount();
                     updateActiveAlbum();
@@ -691,7 +762,7 @@
             userScore += points;
             document.getElementById('scoreDisplay').textContent = userScore;
             updateTracksCount();
-            saveProgress(); // Автосохранение
+            saveProgress();
         }
         
         // Обновление счетчика треков
@@ -703,7 +774,7 @@
         
         // Обновление активного альбома
         function updateActiveAlbum() {
-            document.getElementById('activeAlbum').textContent = albums[selectedAlbum].name;
+            document.getElementById('activeAlbum').textContent = `📀 ${albums[selectedAlbum].name}`;
         }
         
         // Выбор альбома
@@ -718,16 +789,21 @@
                 document.getElementById('albumBtn2').classList.add('active');
             }
             
-            // Обновляем информацию об альбоме
+            // Обновляем обложку
             const album = albums[albumId];
+            const albumCover = document.getElementById('albumCover');
+            albumCover.className = `album-cover ${album.coverClass}`;
+            albumCover.textContent = album.coverIcon;
+            
+            // Обновляем информацию об альбоме
             document.getElementById('albumInfo').textContent = 
                 `${album.tracks.length} треков • Альбом ${album.year}`;
             
-            document.getElementById('musicModalTitle').textContent = `🎵 ${album.name}`;
+            document.getElementById('musicModalTitle').textContent = `📀 ${album.name}`;
             
             updateActiveAlbum();
             updateMusicList();
-            saveProgress(); // Автосохранение
+            saveProgress();
         }
         
         // Открытие игрового модального окна
@@ -755,12 +831,10 @@
             currentGameType = null;
             document.getElementById('gameModal').style.display = 'none';
             
-            // Очистка canvas
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Очистка элементов
             document.getElementById('countdownDiv').innerHTML = '';
             document.getElementById('levelTransitionDiv').innerHTML = '';
         }
@@ -769,8 +843,6 @@
         function openMusicModal() {
             const modal = document.getElementById('musicModal');
             modal.style.display = 'block';
-            
-            // Устанавливаем активный альбом
             selectAlbum(selectedAlbum);
         }
         
@@ -779,29 +851,26 @@
             document.getElementById('musicModal').style.display = 'none';
         }
         
-        // Обновление списка музыки
+        // ОБНОВЛЕННАЯ ФУНКЦИЯ СПИСКА МУЗЫКИ (БЕЗ ОПИСАНИЙ)
         function updateMusicList() {
             const tracksList = document.getElementById('tracksList');
             const currentAlbum = albums[selectedAlbum];
             let tracksHTML = '';
             
-            currentAlbum.tracks.forEach((track, index) => {
+            currentAlbum.tracks.forEach((track) => {
                 const isUnlocked = unlockedTracks.includes(track.id);
                 const rarityClass = `rarity-${track.rarity}`;
                 const trackClass = isUnlocked ? '' : 'locked';
                 
-                // Для разблокированных треков используем случайную иконку
-                const icon = isUnlocked ? 
-                    unlockedIcons[index % unlockedIcons.length] : 
-                    '🔒';
+                // ИСПРАВЛЕНО: Только 💿 для разблокированных треков
+                const icon = isUnlocked ? '💿' : '🔒';
                 
                 tracksHTML += `
                     <div class="track-item ${trackClass}">
                         <div class="track-info">
                             <div class="track-title">${icon} ${track.title}</div>
                             <div class="track-details">
-                                ${track.artist}${isUnlocked ? ' • ' + track.description : ''}
-                                ${isUnlocked ? `<br><span class="rarity-badge ${rarityClass}">${rarityNames[track.rarity]}</span>` : ''}
+                                ${track.artist}${isUnlocked ? `<br><span class="rarity-badge ${rarityClass}">${rarityNames[track.rarity]}</span>` : ''}
                             </div>
                         </div>
                         <button class="play-btn" 
@@ -820,15 +889,12 @@
         function playTrack(trackId, trackTitle, trackArtist, audioFile) {
             tg.HapticFeedback.impactOccurred('light');
             
-            // Пытаемся воспроизвести аудио файл
             try {
-                // Останавливаем предыдущий трек если играет
                 if (window.currentAudio) {
                     window.currentAudio.pause();
                     window.currentAudio = null;
                 }
                 
-                // Создаем новый аудио элемент
                 const audio = new Audio(audioFile);
                 audio.volume = 0.7;
                 
@@ -836,11 +902,9 @@
                     window.currentAudio = audio;
                     tg.showAlert(`🎵 Играет: ${trackTitle} - ${trackArtist}`);
                 }).catch(() => {
-                    // Если файл не найден, показываем уведомление
                     tg.showAlert(`🎵 ${trackTitle} - ${trackArtist}\n(Аудио файл не загружен)`);
                 });
                 
-                // Автоматически убираем ссылку на аудио когда трек закончится
                 audio.addEventListener('ended', () => {
                     window.currentAudio = null;
                 });
@@ -876,7 +940,7 @@
             
             if (isNew) {
                 tg.HapticFeedback.impactOccurred('heavy');
-                saveProgress(); // Автосохранение при получении нового трека
+                saveProgress();
             } else {
                 tg.HapticFeedback.impactOccurred('light');
             }
@@ -888,7 +952,7 @@
             gamePaused = false;
         }
         
-        // АРКАНОИД ИГРА (та же логика, что и раньше)
+        // АРКАНОИД ИГРА (та же логика)
         function startArkanoidGame() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -1282,7 +1346,7 @@
         
         // Инициализация при загрузке страницы
         window.onload = function() {
-            loadProgress(); // Загружаем сохраненный прогресс
+            loadProgress();
             updateTracksCount();
             updateActiveAlbum();
         };
