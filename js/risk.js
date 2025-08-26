@@ -1,63 +1,149 @@
-// RISK OF RAIN - КОСМИЧЕСКАЯ ВЕРСИЯ
 function startRiskGame() {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
-    // СОЗДАЕМ HTML КНОПКУ ПОЛНОГО ЭКРАНА
-    let fullscreenBtn = document.getElementById('fullscreenBtn');
-    if (!fullscreenBtn) {
-        fullscreenBtn = document.createElement('button');
-        fullscreenBtn.id = 'fullscreenBtn';
-        fullscreenBtn.innerHTML = '⛶';
-        fullscreenBtn.style.cssText = `
+    
+    // СОЗДАЕМ КНОПКУ УВЕЛИЧЕНИЯ ЭКРАНА (вместо полноэкранного режима)
+    let expandBtn = document.getElementById('expandBtn');
+    if (!expandBtn) {
+        expandBtn = document.createElement('button');
+        expandBtn.id = 'expandBtn';
+        expandBtn.innerHTML = '⛶';
+        expandBtn.style.cssText = `
             position: fixed;
-            top: 60px;
-            right: 10px;
-            width: 45px;
-            height: 45px;
+            bottom: 10px;
+            left: 10px;
+            width: 50px;
+            height: 50px;
             background: linear-gradient(135deg, #4ecdc4, #45b7d1);
-            border: 2px solid #4ecdc4;
+            border: 3px solid #4ecdc4;
             border-radius: 50%;
             color: white;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             cursor: pointer;
-            z-index: 10001;
-            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
-            transition: all 0.3s;
+            z-index: 99999;
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: auto !important;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         `;
         
-        // Обработчик клика
-        fullscreenBtn.addEventListener('click', function() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then(() => {
-                    this.innerHTML = '✕';
-                    this.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e53)';
-                    this.style.borderColor = '#ff6b6b';
-                }).catch(err => {
-                    console.log('Ошибка полноэкранного режима:', err);
-                });
-            } else {
-                document.exitFullscreen().then(() => {
-                    this.innerHTML = '⛶';
-                    this.style.background = 'linear-gradient(135deg, #4ecdc4, #45b7d1)';
-                    this.style.borderColor = '#4ecdc4';
-                });
-            }
-        });
+        let isExpanded = false;
+        const originalWidth = canvas.width;
+        const originalHeight = canvas.height;
         
-        // Добавляем на страницу
-        document.body.appendChild(fullscreenBtn);
+        // Функция расширения
+        const toggleExpand = function() {
+            if (!isExpanded) {
+                // Расширяем canvas на весь экран
+                const modal = document.getElementById('gameModal');
+                const modalContent = modal.querySelector('.modal-content');
+                
+                modalContent.style.maxWidth = '100%';
+                modalContent.style.width = '100%';
+                modalContent.style.height = '100vh';
+                modalContent.style.margin = '0';
+                modalContent.style.borderRadius = '0';
+                
+                canvas.style.width = '100%';
+                canvas.style.height = 'calc(100vh - 100px)';
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight - 100;
+                
+                expandBtn.innerHTML = '✕';
+                expandBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e53)';
+                expandBtn.style.borderColor = '#ff6b6b';
+                
+                isExpanded = true;
+                
+                // Скрываем заголовок модального окна
+                const modalHeader = modal.querySelector('.modal-header');
+                if (modalHeader) modalHeader.style.display = 'none';
+                
+            } else {
+                // Возвращаем обычный размер
+                const modal = document.getElementById('gameModal');
+                const modalContent = modal.querySelector('.modal-content');
+                const modalHeader = modal.querySelector('.modal-header');
+                
+                modalContent.style.maxWidth = '400px';
+                modalContent.style.width = '98%';
+                modalContent.style.height = 'auto';
+                modalContent.style.margin = '2% auto';
+                modalContent.style.borderRadius = '20px';
+                
+                canvas.width = originalWidth;
+                canvas.height = originalHeight;
+                canvas.style.width = 'auto';
+                canvas.style.height = 'auto';
+                
+                if (modalHeader) modalHeader.style.display = 'flex';
+                
+                expandBtn.innerHTML = '⛶';
+                expandBtn.style.background = 'linear-gradient(135deg, #4ecdc4, #45b7d1)';
+                expandBtn.style.borderColor = '#4ecdc4';
+                
+                isExpanded = false;
+            }
+        };
+        
+        // Простой обработчик клика
+        expandBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleExpand();
+        };
+        
+        document.body.appendChild(expandBtn);
     }
     
     // Показываем кнопку
-    fullscreenBtn.style.display = 'flex';
-    document.getElementById('gameOverDiv').style.display = 'none';
-    document.getElementById('gameInstructions').textContent = '🚀 Управление • ⚔️ Автоатака • 🌌 Исследуй миры';
-    document.getElementById('levelTransitionDiv').innerHTML = '';
+    expandBtn.style.display = 'flex';
+    
+    // Альтернатива для Telegram Web App - используем метод expand
+    try {
+        // Пробуем использовать Telegram Web App API
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tgExpand = document.createElement('button');
+            tgExpand.id = 'tgExpandBtn';
+            tgExpand.innerHTML = '📱';
+            tgExpand.style.cssText = `
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                width: 50px;
+                height: 50px;
+                background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+                border: 3px solid #ff6b6b;
+                border-radius: 50%;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                z-index: 99999;
+                box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            tgExpand.onclick = function() {
+                // Используем Telegram Web App метод для расширения
+                if (tg.isExpanded) {
+                    // Уже расширено
+                    tg.close();
+                } else {
+                    tg.expand();
+                }
+            };
+            
+            document.body.appendChild(tgExpand);
+        }
+    } catch (e) {
+        console.log('Telegram Web App API недоступен');
+    }
     
     // Игровые переменные
     let gameScore = 0;
