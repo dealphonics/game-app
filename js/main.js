@@ -151,28 +151,28 @@ function updateActiveAlbum() {
     document.getElementById('activeAlbum').textContent = `📀 ${albums[selectedAlbum].name}`;
 }
 
-// Открытие игрового модального окна
+// Обновите функцию openGameModal
 function openGameModal(gameType) {
     currentGameType = gameType;
     const modal = document.getElementById('gameModal');
     const title = document.getElementById('gameTitle');
     
-    if (gameType === 'arkanoid') {
-        title.textContent = '🔴 Арканоид';
-        modal.style.display = 'block';
-        document.getElementById('gameOverDiv').style.display = 'none';
-        startArkanoidGame();
+    modal.style.display = 'block';
+    document.getElementById('gameOverDiv').style.display = 'none';
+    
+    if (gameType === 'risk') {
+        title.textContent = '⚔️ Risk of Rain';
+        startRiskGame();
     } else if (gameType === 'doodle') {
         title.textContent = '🎯 Doodle Jump';
-        modal.style.display = 'block';
-        document.getElementById('gameOverDiv').style.display = 'none';
         startDoodleGame();
     }
 }
 
+// Обновите функцию restartCurrentGame
 function restartCurrentGame() {
-    if (currentGameType === 'arkanoid') {
-        startArkanoidGame();
+    if (currentGameType === 'risk') {
+        startRiskGame();
     } else if (currentGameType === 'doodle') {
         startDoodleGame();
     }
