@@ -700,16 +700,17 @@ function startRiskGame() {
             const touchX = touch.clientX - rect.left;
             const touchY = touch.clientY - rect.top;
             
-            // Кнопка полного экрана (левый верхний угол)
-            if (touchX < 40 && touchY < 40) {
+            // Кнопка полного экрана (правый верхний угол)
+            if (touchX > canvas.width - 50 && touchY < 40) {
                 toggleFullscreen();
+                return; // Важно! Прерываем выполнение
             }
-            // Кнопка атаки
+            // Кнопка атаки (правый нижний угол)
             else if (touchX > canvas.width - 60 && touchY > canvas.height - 60) {
                 attackButtonPressed = true;
                 playerMeleeAttack();
             }
-            // Джойстик
+            // Джойстик (левая часть экрана)
             else if (touchX < canvas.width / 2 && !joystickActive) {
                 joystickActive = true;
                 joystickBase.x = touchX;
@@ -2309,111 +2310,129 @@ function startRiskGame() {
     }
     
     // Отрисовка UI
-    function drawUI() {
-        // Полоска здоровья
-        ctx.fillStyle = 'rgba(0,0,0,0.8)';
-        ctx.fillRect(8, 8, 104, 14);
-        
-        const healthGradient = ctx.createLinearGradient(10, 10, 110, 10);
-        healthGradient.addColorStop(0, '#e74c3c');
-        healthGradient.addColorStop(1, '#c0392b');
-        ctx.fillStyle = healthGradient;
-        ctx.fillRect(10, 10, 100 * (player.health / player.maxHealth), 10);
-        
-        ctx.strokeStyle = '#ecf0f1';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(8, 8, 104, 14);
-        
-        // Текст здоровья
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 9px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${Math.floor(player.health)}/${player.maxHealth}`, 60, 18);
-        
-        // Информация об игре
-        ctx.fillStyle = '#4ecdc4';
-        ctx.font = 'bold 11px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Очки: ${gameScore}`, 10, 35);
-        ctx.fillText(`Волна: ${waveNumber}`, 10, 48);
-        ctx.fillText(`Убито: ${totalEnemiesKilled}`, 10, 61);
-        
-        if (boss) {
-            ctx.fillStyle = '#ff6b6b';
-            ctx.fillText(`БОСС!`, 10, 74);
-        } else {
-            ctx.fillText(`Врагов: ${enemies.length}/${maxEnemiesPerWave}`, 10, 74);
-        }
-        
-        // Мир
-        ctx.fillStyle = '#feca57';
-        ctx.fillText(`Мир: ${currentWorld + 1}`, 10, 87);
-        
-        // Характеристики
-        ctx.font = '9px Arial';
-        ctx.fillStyle = '#ecf0f1';
-        ctx.textAlign = 'right';
-        ctx.fillText(`ATK: ${player.damage}`, canvas.width - 10, 25);
-        ctx.fillText(`SPD: ${player.speed.toFixed(1)}`, canvas.width - 10, 35);
-        ctx.fillText(`CRIT: ${(player.critChance * 100).toFixed(0)}%`, canvas.width - 10, 45);
-        if (player.lifeSteal > 0) {
-            ctx.fillText(`VAMP: ${(player.lifeSteal * 100).toFixed(0)}%`, canvas.width - 10, 55);
-        }
-        if (player.defense > 0) {
-            ctx.fillText(`DEF: ${player.defense}`, canvas.width - 10, 65);
-        }
-        
-        // Кнопка полного экрана
+function drawUI() {
+    // Полоска здоровья
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(8, 8, 104, 14);
+    
+    const healthGradient = ctx.createLinearGradient(10, 10, 110, 10);
+    healthGradient.addColorStop(0, '#e74c3c');
+    healthGradient.addColorStop(1, '#c0392b');
+    ctx.fillStyle = healthGradient;
+    ctx.fillRect(10, 10, 100 * (player.health / player.maxHealth), 10);
+    
+    ctx.strokeStyle = '#ecf0f1';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(8, 8, 104, 14);
+    
+    // Текст здоровья
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${Math.floor(player.health)}/${player.maxHealth}`, 60, 18);
+    
+    // Информация об игре
+    ctx.fillStyle = '#4ecdc4';
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Очки: ${gameScore}`, 10, 35);
+    ctx.fillText(`Волна: ${waveNumber}`, 10, 48);
+    ctx.fillText(`Убито: ${totalEnemiesKilled}`, 10, 61);
+    
+    if (boss) {
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText(`БОСС!`, 10, 74);
+    } else {
+        ctx.fillText(`Врагов: ${enemies.length}/${maxEnemiesPerWave}`, 10, 74);
+    }
+    
+    // Мир
+    ctx.fillStyle = '#feca57';
+    ctx.fillText(`Мир: ${currentWorld + 1}`, 10, 87);
+    
+    // КНОПКА ПОЛНОГО ЭКРАНА (ПРАВЫЙ ВЕРХНИЙ УГОЛ)
+    const fullscreenX = canvas.width - 45;
+    const fullscreenY = 5;
+    const fullscreenWidth = 40;
+    const fullscreenHeight = 35;
+    
+    // Фон кнопки
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(fullscreenX, fullscreenY, fullscreenWidth, fullscreenHeight);
+    
+    // Градиентная заливка
+    const btnGradient = ctx.createLinearGradient(fullscreenX, fullscreenY, fullscreenX, fullscreenY + fullscreenHeight);
+    btnGradient.addColorStop(0, 'rgba(78,205,196,0.3)');
+    btnGradient.addColorStop(1, 'rgba(78,205,196,0.1)');
+    ctx.fillStyle = btnGradient;
+    ctx.fillRect(fullscreenX, fullscreenY, fullscreenWidth, fullscreenHeight);
+    
+    // Рамка
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(fullscreenX, fullscreenY, fullscreenWidth, fullscreenHeight);
+    
+    // Иконка полного экрана
+    ctx.fillStyle = '#4ecdc4';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('⛶', fullscreenX + fullscreenWidth/2, fullscreenY + 25);
+    
+    // Характеристики (сдвигаем ниже, чтобы не перекрывались с кнопкой)
+    ctx.font = '9px Arial';
+    ctx.fillStyle = '#ecf0f1';
+    ctx.textAlign = 'right';
+    ctx.fillText(`ATK: ${player.damage}`, canvas.width - 10, 55);
+    ctx.fillText(`SPD: ${player.speed.toFixed(1)}`, canvas.width - 10, 65);
+    ctx.fillText(`CRIT: ${(player.critChance * 100).toFixed(0)}%`, canvas.width - 10, 75);
+    if (player.lifeSteal > 0) {
+        ctx.fillText(`VAMP: ${(player.lifeSteal * 100).toFixed(0)}%`, canvas.width - 10, 85);
+    }
+    if (player.defense > 0) {
+        ctx.fillText(`DEF: ${player.defense}`, canvas.width - 10, 95);
+    }
+    
+    // Кнопка атаки (правый нижний угол)
+    ctx.fillStyle = attackButtonPressed ? 'rgba(255, 107, 107, 0.5)' : 'rgba(255, 107, 107, 0.3)';
+    ctx.beginPath();
+    ctx.arc(canvas.width - 35, canvas.height - 35, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#ff6b6b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚔', canvas.width - 35, canvas.height - 28);
+    
+    // Джойстик
+    if (joystickActive) {
+        // База
         ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(10, canvas.height - 35, 30, 25);
-        ctx.strokeStyle = '#ecf0f1';
-        ctx.strokeRect(10, canvas.height - 35, 30, 25);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('⛶', 25, canvas.height - 18);
-        
-        // Кнопка атаки
-        ctx.fillStyle = attackButtonPressed ? 'rgba(255, 107, 107, 0.5)' : 'rgba(255, 107, 107, 0.3)';
         ctx.beginPath();
-        ctx.arc(canvas.width - 35, canvas.height - 35, 25, 0, Math.PI * 2);
+        ctx.arc(joystickBase.x, joystickBase.y, 30, 0, Math.PI * 2);
         ctx.fill();
-        
-        ctx.strokeStyle = '#ff6b6b';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
         ctx.stroke();
         
-        ctx.fillStyle = '#fff';
+        // Ручка
+        ctx.fillStyle = 'rgba(78,205,196,0.5)';
+        ctx.beginPath();
+        ctx.arc(joystickKnob.x, joystickKnob.y, 15, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Уведомление о боссе
+    if (boss && boss.health === boss.maxHealth) {
+        const bossAlpha = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+        ctx.fillStyle = `rgba(255, 0, 0, ${bossAlpha})`;
         ctx.font = 'bold 20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('⚔', canvas.width - 35, canvas.height - 28);
-        
-        // Джойстик
-        if (joystickActive) {
-            // База
-            ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.beginPath();
-            ctx.arc(joystickBase.x, joystickBase.y, 30, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-            ctx.stroke();
-            
-            // Ручка
-            ctx.fillStyle = 'rgba(78,205,196,0.5)';
-            ctx.beginPath();
-            ctx.arc(joystickKnob.x, joystickKnob.y, 15, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // Уведомление о боссе
-        if (boss && boss.health === boss.maxHealth) {
-            const bossAlpha = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
-            ctx.fillStyle = `rgba(255, 0, 0, ${bossAlpha})`;
-            ctx.font = 'bold 20px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('⚠ БОСС ПОЯВИЛСЯ ⚠', canvas.width/2, 50);
-        }
+        ctx.fillText('⚠ БОСС ПОЯВИЛСЯ ⚠', canvas.width/2, 50);
     }
+}
     
     // Конец игры
     function endGame() {
