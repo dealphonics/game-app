@@ -2,7 +2,59 @@
 function startRiskGame() {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+
+    // СОЗДАЕМ HTML КНОПКУ ПОЛНОГО ЭКРАНА
+    let fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (!fullscreenBtn) {
+        fullscreenBtn = document.createElement('button');
+        fullscreenBtn.id = 'fullscreenBtn';
+        fullscreenBtn.innerHTML = '⛶';
+        fullscreenBtn.style.cssText = `
+            position: fixed;
+            top: 60px;
+            right: 10px;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            border: 2px solid #4ecdc4;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10001;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        // Обработчик клика
+        fullscreenBtn.addEventListener('click', function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().then(() => {
+                    this.innerHTML = '✕';
+                    this.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e53)';
+                    this.style.borderColor = '#ff6b6b';
+                }).catch(err => {
+                    console.log('Ошибка полноэкранного режима:', err);
+                });
+            } else {
+                document.exitFullscreen().then(() => {
+                    this.innerHTML = '⛶';
+                    this.style.background = 'linear-gradient(135deg, #4ecdc4, #45b7d1)';
+                    this.style.borderColor = '#4ecdc4';
+                });
+            }
+        });
+        
+        // Добавляем на страницу
+        document.body.appendChild(fullscreenBtn);
+    }
     
+    // Показываем кнопку
+    fullscreenBtn.style.display = 'flex';
     document.getElementById('gameOverDiv').style.display = 'none';
     document.getElementById('gameInstructions').textContent = '🚀 Управление • ⚔️ Автоатака • 🌌 Исследуй миры';
     document.getElementById('levelTransitionDiv').innerHTML = '';
@@ -2436,15 +2488,21 @@ function drawUI() {
     
     // Конец игры
     function endGame() {
-        updateScore(gameScore);
-        document.getElementById('gameOverDiv').style.display = 'block';
-        document.getElementById('gameInstructions').innerHTML = 
-            `🎮 Игра окончена!<br>
-             📊 Очки: ${gameScore}<br>
-             🌊 Волна: ${waveNumber}<br>
-             ⚔️ Убито: ${totalEnemiesKilled}<br>
-             👑 Боссов побеждено: ${bossesDefeated}<br>
-             🌌 Миров исследовано: ${currentWorld + 1}`;
+       updateScore(gameScore);
+    document.getElementById('gameOverDiv').style.display = 'block';
+    document.getElementById('gameInstructions').innerHTML = 
+        `🎮 Игра окончена!<br>
+         📊 Очки: ${gameScore}<br>
+         🌊 Волна: ${waveNumber}<br>
+         ⚔️ Убито: ${totalEnemiesKilled}<br>
+         👑 Боссов побеждено: ${bossesDefeated}<br>
+         🌌 Миров исследовано: ${currentWorld + 1}`;
+    
+    // Скрываем кнопку полного экрана
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.style.display = 'none';
+        }
     }
     
     // Инициализация
