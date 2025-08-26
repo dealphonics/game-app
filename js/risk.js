@@ -4,7 +4,7 @@ function startRiskGame() {
     const ctx = canvas.getContext('2d');
     
     document.getElementById('gameOverDiv').style.display = 'none';
-    document.getElementById('gameInstructions').textContent = 'Нажмите для атаки • Свайп для движения';
+    document.getElementById('gameInstructions').textContent = 'Управление: движение • Автоатака';
     document.getElementById('levelTransitionDiv').innerHTML = '';
     
     // Игровые переменные
@@ -44,14 +44,16 @@ function startRiskGame() {
         maxHealth: 100,
         health: 100,
         damage: 10,
-        attackSpeed: 500, // мс между атаками
-        attackRange: 40,
+        attackSpeed: 300, // мс между атаками
+        attackRange: 50,
+        shootRange: 150,
         defense: 0,
         critChance: 0.1,
         lifeSteal: 0,
         
         // Состояния
         lastAttackTime: 0,
+        lastShootTime: 0,
         isAttacking: false,
         attackAnimation: 0,
         invulnerable: false,
@@ -67,7 +69,8 @@ function startRiskGame() {
     // Враги
     let enemies = [];
     let enemySpawnTimer = 0;
-    let enemySpawnDelay = 3000; // мс между спавнами
+    let enemySpawnDelay = 2000; // мс между спавнами (уменьшил с 3000)
+    let lastEnemySpawn = 0;
     
     // Типы врагов
     const enemyTypes = {
@@ -161,6 +164,13 @@ function startRiskGame() {
             effect: () => {
                 player.defense += 5;
             }
+        },
+        attackSpeed: {
+            name: 'Скорострельность',
+            color: '#ff00ff',
+            effect: () => {
+                player.attackSpeed = Math.max(100, player.attackSpeed - 50);
+            }
         }
     };
     
@@ -181,6 +191,7 @@ function startRiskGame() {
     let joystickActive = false;
     let joystickBase = { x: 0, y: 0 };
     let joystickKnob = { x: 0, y: 0 };
+    let attackButtonPressed = false;
     
     gameRunning = false;
     gamePaused = false;
@@ -230,6 +241,11 @@ function startRiskGame() {
             height: 10,
             color: '#2d3436'
         });
+        
+        // Спавним начальных врагов
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => spawnEnemy(), i * 500);
+        }
     }
     
     // Спавн врага
@@ -239,7 +255,10 @@ function startRiskGame() {
         const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
         const template = enemyTypes[type];
         
-        const spawnX = Math.random() > 0.5 ? -50 : levelWidth + 50;
+        // Спавн с обеих сторон экрана
+        const spawnX = Math.random() > 0.5 ? 
+            cameraX - 50 : 
+            cameraX + canvas.width + 50;
         
         const enemy = {
             x: spawnX,
@@ -264,6 +283,9 @@ function startRiskGame() {
         };
         
         enemies.push(enemy);
+        
+        // Создаем частицы спавна
+        createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color, 8);
     }
     
     // Спавн сундука
@@ -348,20 +370,25 @@ function startRiskGame() {
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const rect = canvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        touchStartX = touch.clientX - rect.left;
-        touchStartY = touch.clientY - rect.top;
         
-        // Джойстик в левой части экрана
-        if (touchStartX < canvas.width / 2) {
-            joystickActive = true;
-            joystickBase.x = touchStartX;
-            joystickBase.y = touchStartY;
-            joystickKnob.x = touchStartX;
-            joystickKnob.y = touchStartY;
-        } else {
-            // Атака в правой части
-            playerAttack();
+        for (let i = 0; i < e.touches.length; i++) {
+            const touch = e.touches[i];
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            
+            // Кнопка атаки в правом нижнем углу
+            if (touchX > canvas.width - 60 && touchY > canvas.height - 60) {
+                attackButtonPressed = true;
+                playerMeleeAttack();
+            }
+            // Джойстик в левой части
+            else if (touchX < canvas.width / 2 && !joystickActive) {
+                joystickActive = true;
+                joystickBase.x = touchX;
+                joystickBase.y = touchY;
+                joystickKnob.x = touchX;
+                joystickKnob.y = touchY;
+            }
         }
     });
     
@@ -402,13 +429,28 @@ function startRiskGame() {
         }
     });
     
-    canvas.addEventListener('touchend', () => {
-        joystickActive = false;
-        player.velocityX = 0;
+    canvas.addEventListener('touchend', (e) => {
+        // Проверяем, закончилось ли касание джойстика
+        let joystickTouchEnded = true;
+        for (let i = 0; i < e.touches.length; i++) {
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[i].clientX - rect.left;
+            if (touchX < canvas.width / 2) {
+                joystickTouchEnded = false;
+                break;
+            }
+        }
+        
+        if (joystickTouchEnded) {
+            joystickActive = false;
+            player.velocityX = 0;
+        }
+        
+        attackButtonPressed = false;
     });
     
-    // Атака игрока
-    function playerAttack() {
+    // Ближняя атака игрока
+    function playerMeleeAttack() {
         const now = Date.now();
         if (now - player.lastAttackTime < player.attackSpeed) return;
         
@@ -445,19 +487,49 @@ function startRiskGame() {
                 tg.HapticFeedback.impactOccurred('medium');
             }
         });
+    }
+    
+    // Автоматическая стрельба
+    function autoShoot() {
+        const now = Date.now();
+        if (now - player.lastShootTime < player.attackSpeed * 2) return;
         
-        // Дальний бой (если есть предмет)
-        if (player.items.includes('rangedAttack')) {
+        // Находим ближайшего врага
+        let nearestEnemy = null;
+        let nearestDistance = player.shootRange;
+        
+        enemies.forEach(enemy => {
+            const dx = enemy.x + enemy.width/2 - (player.x + player.width/2);
+            const dy = enemy.y + enemy.height/2 - (player.y + player.height/2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestEnemy = enemy;
+            }
+        });
+        
+        if (nearestEnemy) {
+            player.lastShootTime = now;
+            
+            // Направление к врагу
+            const dx = nearestEnemy.x + nearestEnemy.width/2 - (player.x + player.width/2);
+            const dy = nearestEnemy.y + nearestEnemy.height/2 - (player.y + player.height/2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
             projectiles.push({
                 x: player.x + player.width/2,
                 y: player.y + player.height/2,
-                velocityX: player.facing * 8,
-                velocityY: 0,
-                damage: player.damage * 0.5,
+                velocityX: (dx / distance) * 8,
+                velocityY: (dy / distance) * 8,
+                damage: player.damage * 0.7,
                 color: '#feca57',
-                size: 4,
+                size: 3,
                 lifetime: 60
             });
+            
+            // Обновляем направление взгляда
+            player.facing = dx > 0 ? 1 : -1;
         }
     }
     
@@ -480,7 +552,10 @@ function startRiskGame() {
         document.getElementById('timeToTrack').textContent = `${timeToTrack}s`;
         
         if (timeSinceTrack >= 60 && vinyls.length === 0) {
-            spawnVinyl(Math.random() * (levelWidth - 100) + 50, 100);
+            spawnVinyl(
+                player.x + (Math.random() - 0.5) * 200,
+                player.y - 50
+            );
             lastTrackTime = Date.now();
         }
         
@@ -533,8 +608,11 @@ function startRiskGame() {
         }
         
         if (keys['x'] || keys['Enter']) {
-            playerAttack();
+            playerMeleeAttack();
         }
+        
+        // Автоматическая стрельба
+        autoShoot();
         
         // Физика игрока
         player.velocityY += player.gravity;
@@ -583,10 +661,15 @@ function startRiskGame() {
         }
         
         // Спавн врагов
-        enemySpawnTimer += 16;
-        if (enemySpawnTimer >= enemySpawnDelay / difficulty) {
+        const now = Date.now();
+        if (now - lastEnemySpawn >= enemySpawnDelay / difficulty) {
             spawnEnemy();
-            enemySpawnTimer = 0;
+            lastEnemySpawn = now;
+            
+            // Увеличиваем количество врагов с волнами
+            if (waveNumber > 2 && Math.random() < 0.3) {
+                setTimeout(() => spawnEnemy(), 500);
+            }
         }
         
         // Обновление врагов
@@ -611,7 +694,7 @@ function startRiskGame() {
                     enemy.velocityY = (dy / distance) * enemy.speed;
                 } else {
                     // Наземные враги
-                    if (distance < 200) {
+                    if (distance < 300) {
                         enemy.velocityX = Math.sign(dx) * enemy.speed;
                         
                         // Прыжок если игрок выше
@@ -654,7 +737,6 @@ function startRiskGame() {
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < attackDistance && !player.invulnerable) {
-                const now = Date.now();
                 if (now - enemy.lastAttackTime > 1000) {
                     enemy.lastAttackTime = now;
                     const damage = Math.max(1, enemy.damage - player.defense);
@@ -682,19 +764,24 @@ function startRiskGame() {
                 createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color, 10);
                 
                 // Шанс выпадения предмета
-                if (Math.random() < 0.2) {
+                if (Math.random() < 0.25) {
                     spawnItem(enemy.x + enemy.width/2, enemy.y);
                 }
                 
                 // Шанс выпадения сундука
-                if (Math.random() < 0.05) {
+                if (Math.random() < 0.1) {
                     spawnChest(enemy.x + enemy.width/2, enemy.y);
                 }
                 
                 return false;
             }
             
-            return enemy.x > -100 && enemy.x < levelWidth + 100 && enemy.y < canvas.height + 100;
+            // Удаляем врагов, которые упали слишком низко
+            if (enemy.y > canvas.height + 100) {
+                return false;
+            }
+            
+            return true;
         });
         
         // Обновление снарядов
@@ -704,20 +791,24 @@ function startRiskGame() {
             projectile.lifetime--;
             
             // Столкновение с врагами
+            let hit = false;
             enemies.forEach(enemy => {
                 const dx = enemy.x + enemy.width/2 - projectile.x;
                 const dy = enemy.y + enemy.height/2 - projectile.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance < enemy.width/2 + projectile.size) {
-                    enemy.health -= projectile.damage;
-                    showDamage(enemy.x + enemy.width/2, enemy.y, projectile.damage);
+                if (distance < enemy.width/2 + projectile.size && !hit) {
+                    const isCrit = Math.random() < player.critChance;
+                    const damage = projectile.damage * (isCrit ? 2 : 1);
+                    
+                    enemy.health -= damage;
+                    showDamage(enemy.x + enemy.width/2, enemy.y, damage, isCrit);
                     createParticles(projectile.x, projectile.y, projectile.color, 3);
-                    projectile.lifetime = 0;
+                    hit = true;
                 }
             });
             
-            return projectile.lifetime > 0;
+            return projectile.lifetime > 0 && !hit;
         });
         
         // Обновление предметов
@@ -767,7 +858,7 @@ function startRiskGame() {
                 }
             }
             
-            return !item.collected;
+            return !item.collected && item.y < canvas.height + 50;
         });
         
         // Обновление сундуков
@@ -980,6 +1071,13 @@ function startRiskGame() {
                 ctx.beginPath();
                 ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2, 0, Math.PI * 2);
                 ctx.fill();
+            } else if (enemy.type === 'fly') {
+                // Летающий враг - с крыльями
+                ctx.fillRect(enemy.x + 2, enemy.y, enemy.width - 4, enemy.height);
+                // Крылья
+                ctx.fillStyle = `${enemy.color}66`;
+                ctx.fillRect(enemy.x - 3, enemy.y + 2, 6, enemy.height - 4);
+                ctx.fillRect(enemy.x + enemy.width - 3, enemy.y + 2, 6, enemy.height - 4);
             } else {
                 // Остальные - прямоугольные
                 ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
@@ -1089,6 +1187,10 @@ function startRiskGame() {
         // Убито врагов
         ctx.fillText(`Убито: ${totalEnemiesKilled}`, 10, 65);
         
+        // Количество врагов на экране
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText(`Врагов: ${enemies.length}`, 10, 80);
+        
         // Характеристики игрока
         ctx.font = '9px Arial';
         ctx.fillStyle = '#feca57';
@@ -1102,6 +1204,29 @@ function startRiskGame() {
         if (player.defense > 0) {
             ctx.fillText(`DEF: ${player.defense}`, canvas.width - 10, 65);
         }
+        
+        // Кнопка атаки (для мобильных)
+        ctx.fillStyle = 'rgba(255, 107, 107, 0.3)';
+        ctx.beginPath();
+        ctx.arc(canvas.width - 35, canvas.height - 35, 25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (attackButtonPressed) {
+            ctx.fillStyle = 'rgba(255, 107, 107, 0.6)';
+            ctx.beginPath();
+            ctx.arc(canvas.width - 35, canvas.height - 35, 25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Иконка меча
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚔', canvas.width - 35, canvas.height - 28);
         
         // Джойстик (мобильное управление)
         if (joystickActive) {
