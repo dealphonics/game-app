@@ -157,18 +157,26 @@ function openGameModal(gameType) {
     const modal = document.getElementById('gameModal');
     const title = document.getElementById('gameTitle');
     
-    title.textContent = '🔴 Арканоид';
-    modal.style.display = 'block';
-    
-    document.getElementById('gameOverDiv').style.display = 'none';
-    startArkanoidGame();
+    if (gameType === 'arkanoid') {
+        title.textContent = '🔴 Арканоид';
+        modal.style.display = 'block';
+        document.getElementById('gameOverDiv').style.display = 'none';
+        startArkanoidGame();
+    } else if (gameType === 'doodle') {
+        title.textContent = '🎯 Doodle Jump';
+        modal.style.display = 'block';
+        document.getElementById('gameOverDiv').style.display = 'none';
+        startDoodleGame();
+    }
 }
 
-// Перезапуск текущей игры
 function restartCurrentGame() {
-    startArkanoidGame();
+    if (currentGameType === 'arkanoid') {
+        startArkanoidGame();
+    } else if (currentGameType === 'doodle') {
+        startDoodleGame();
+    }
 }
-
 // Закрытие игрового модального окна
 function closeGameModal() {
     gameRunning = false;
