@@ -141,6 +141,41 @@ function loadProgress() {
     }
 }
 
+// ТЕСТОВЫЙ РЕЖИМ - разблокировать несколько треков для демо
+function enableTestMode() {
+    // Добавляем несколько треков для теста
+    const testTracks = ['k1', 'k2', 'k3', 'p1', 'p2'];
+    testTracks.forEach(trackId => {
+        if (!unlockedTracks.includes(trackId)) {
+            unlockedTracks.push(trackId);
+        }
+    });
+    
+    // Добавляем очки
+    userScore = 1000;
+    
+    // Сохраняем
+    saveProgress();
+    updateScore(0);
+    updateTracksCount();
+    
+    console.log('Test mode enabled! Added tracks and points.');
+}
+
+// Автоматически включаем тестовый режим при первом запуске
+document.addEventListener('DOMContentLoaded', function() {
+    loadProgress();
+    
+    // Если нет разблокированных треков, включаем тестовый режим
+    if (unlockedTracks.length === 0) {
+        enableTestMode();
+        tg.showAlert('Добро пожаловать! Мы добавили несколько треков для ознакомления.');
+    }
+    
+    updateTracksCount();
+    updateActiveAlbum();
+});
+
 // Получение случайного трека
 function getRandomTrack() {
     const currentAlbum = albums[selectedAlbum];
