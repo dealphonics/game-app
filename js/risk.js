@@ -196,8 +196,8 @@ function startRiskGame() {
         jetpackParticles: [],
         
         // Характеристики
-        maxHealth: 100,
-        health: 100,
+        maxHealth: 10000,
+        health: 10000,
         damage: 10,
         attackSpeed: 300,
         attackRange: 60,
