@@ -178,6 +178,7 @@ function restartCurrentGame() {
     }
 }
 // Закрытие игрового модального окна
+
 function closeGameModal() {
     gameRunning = false;
     gamePaused = false;
@@ -191,16 +192,41 @@ function closeGameModal() {
     document.getElementById('countdownDiv').innerHTML = '';
     document.getElementById('levelTransitionDiv').innerHTML = '';
     
-    // Скрываем кнопку полного экрана при закрытии игры
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    if (fullscreenBtn) {
-        fullscreenBtn.style.display = 'none';
+    // Скрываем кнопки расширения
+    const expandBtn = document.getElementById('expandBtn');
+    if (expandBtn) {
+        expandBtn.style.display = 'none';
     }
     
-    // Выходим из полноэкранного режима
-    if (document.fullscreenElement) {
-        document.exitFullscreen();
+    const tgExpandBtn = document.getElementById('tgExpandBtn');
+    if (tgExpandBtn) {
+        tgExpandBtn.style.display = 'none';
     }
+    
+    // Возвращаем нормальный размер модального окна
+    const modal = document.getElementById('gameModal');
+    if (modal) {
+        const modalContent = modal.querySelector('.modal-content');
+        const modalHeader = modal.querySelector('.modal-header');
+        
+        if (modalContent) {
+            modalContent.style.maxWidth = '400px';
+            modalContent.style.width = '98%';
+            modalContent.style.height = 'auto';
+            modalContent.style.margin = '2% auto';
+            modalContent.style.borderRadius = '20px';
+        }
+        
+        if (modalHeader) {
+            modalHeader.style.display = 'flex';
+        }
+    }
+    
+    // Возвращаем canvas к исходному размеру
+    canvas.width = 320;
+    canvas.height = 240;
+    canvas.style.width = 'auto';
+    canvas.style.height = 'auto';
 }
 
 // Открытие музыкального модального окна
