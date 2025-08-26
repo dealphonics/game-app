@@ -117,6 +117,222 @@ body {
     animation-delay: 10s;
 }
 
+/* =====================================================
+   СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН И ИГР
+   ===================================================== */
+
+/* Селектор альбомов */
+.album-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.album-btn {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.album-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.album-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: transparent;
+}
+
+/* Обложка альбома в модальном окне */
+.album-cover-modal {
+    width: 180px;
+    height: 180px;
+    margin: 20px auto;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.album-cover-modal img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.album-info {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+/* Список треков */
+.tracks-container {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.track-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition-base);
+}
+
+.track-item:hover {
+    background: var(--bg-hover);
+    transform: translateX(4px);
+}
+
+.track-item.locked {
+    opacity: 0.5;
+}
+
+.track-info {
+    flex: 1;
+}
+
+.track-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.track-details {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.play-btn {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.play-btn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-glow);
+}
+
+.play-btn:disabled {
+    background: var(--bg-tertiary);
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Игровые стили */
+#gameCanvas {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: #000;
+    margin: 10px auto;
+    display: block;
+}
+
+.game-score {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.game-stats {
+    display: flex;
+    justify-content: space-around;
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.game-instructions {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.restart-btn {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 10px auto;
+    display: block;
+    transition: var(--transition-base);
+}
+
+.restart-btn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Всплывающее окно трека */
+.track-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    z-index: 2000;
+    box-shadow: var(--shadow-xl);
+    animation: scaleIn var(--transition-base);
+    max-width: 300px;
+}
+
+.track-popup h3 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.track-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 10px 0;
+}
+
+.track-artist {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    margin-bottom: 15px;
+}
 @keyframes float {
     0%, 100% { transform: translate(0, 0) scale(1); }
     25% { transform: translate(50px, -50px) scale(1.1); }
