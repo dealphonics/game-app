@@ -404,5 +404,64 @@
     <script src="js/music.js"></script>
     <script src="js/risk.js"></script>
     <script src="js/doodle.js"></script>
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ИГР -->
+<div id="gameModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="gameTitle">Игра</h2>
+            <button class="close" onclick="closeGameModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="game-score" id="currentGameScore">Очки: 0</div>
+            <div class="game-stats">
+                <span>Уровень: <span id="gameLevel">1</span></span>
+                <span>Время: <span id="gameTime">0:00</span></span>
+                <span>До трека: <span id="timeToTrack">60s</span></span>
+            </div>
+            <div style="position: relative;">
+                <canvas id="gameCanvas" width="320" height="240"></canvas>
+                <div id="countdownDiv"></div>
+                <div id="levelTransitionDiv"></div>
+            </div>
+            <div class="game-instructions" id="gameInstructions">
+                Нажмите по экрану для управления
+            </div>
+            <div id="gameOverDiv" style="display: none;">
+                <button class="restart-btn" onclick="restartCurrentGame()">🔄 Начать заново</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ МУЗЫКИ -->
+<div id="musicModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="musicModalTitle">📀 Music Collection</h2>
+            <button class="close" onclick="closeMusicModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="album-selector">
+                <button class="album-btn active" id="albumBtn1" onclick="selectAlbum('karmageddon')">
+                    Karmageddon
+                </button>
+                <button class="album-btn" id="albumBtn2" onclick="selectAlbum('psychi')">
+                    Психи попадают в топ
+                </button>
+            </div>
+            
+            <div class="album-cover-modal" id="albumCover">
+                <img src="https://raw.githubusercontent.com/dealphonics/game-app/main/covers/karmageddon_cover.jpg" 
+                     alt="Album Cover" id="modalAlbumCover">
+            </div>
+            
+            <div class="album-info" id="albumInfo">
+                15 треков • Альбом 2024
+            </div>
+            
+            <div class="tracks-container" id="tracksList"></div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
