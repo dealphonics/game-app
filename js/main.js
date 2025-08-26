@@ -190,6 +190,17 @@ function closeGameModal() {
     
     document.getElementById('countdownDiv').innerHTML = '';
     document.getElementById('levelTransitionDiv').innerHTML = '';
+    
+    // Скрываем кнопку полного экрана при закрытии игры
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.style.display = 'none';
+    }
+    
+    // Выходим из полноэкранного режима
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    }
 }
 
 // Открытие музыкального модального окна
