@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundkeeper Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4ecdc4;
+            margin-bottom: 20px;
+        }
+        
+        .score {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #45b7d1;
+        }
+        
+        #gameArea {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #4ecdc4;
+            background: black;
+            display: block;
+            margin: 10px auto;
+        }
+        
+        .track-list {
+            margin: 20px 0;
+        }
+        
+        .track {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .track.locked {
+            opacity: 0.5;
+        }
+        
+        #notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4ecdc4;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Soundkeeper</h1>
+        
+        <div class="score">
+            Очки: <span id="score">0</span> | 
+            Треки: <span id="tracks">0</span>/5
+        </div>
+        
+        <button onclick="startGame()">🎮 Играть в простую игру</button>
+        <button onclick="showTracks()">🎵 Мои треки</button>
+        <button onclick="resetAll()">🔄 Сбросить прогресс</button>
+        
+        <div id="gameArea">
+            <h2>Кликай по квадратам!</h2>
+            <canvas id="gameCanvas" width="300" height="300"></canvas>
+            <button onclick="stopGame()">Остановить игру</button>
+        </div>
+        
+        <div id="tracksArea" style="display: none;">
+            <h2>Твои треки:</h2>
+            <div class="track-list" id="trackList"></div>
+            <button onclick="hideTracks()">Закрыть</button>
+        </div>
+    </div>
+    
+    <div id="notification"></div>
+
+    <script>
+        // Простая система игры
+        let score = 0;
+        let unlockedTracks = [];
+        let gameActive = false;
+        
+        // Список треков
+        const allTracks = [
+            { id: 1, name: 'Track 1', artist: 'Artist A' },
+            { id: 2, name: 'Track 2', artist: 'Artist B' },
+            { id: 3, name: 'Track 3', artist: 'Artist C' },
+            { id: 4, name: 'Track 4', artist: 'Artist D' },
+            { id: 5, name: 'Track 5', artist: 'Artist E' }
+        ];
+        
+        // Загрузка данных
+        function loadData() {
+            const saved = localStorage.getItem('soundkeeper_data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                score = data.score || 0;
+                unlockedTracks = data.tracks || [];
+            }
+            updateDisplay();
+        }
+        
+        // Сохранение данных
+        function saveData() {
+            localStorage.setItem('soundkeeper_data', JSON.stringify({
+                score: score,
+                tracks: unlockedTracks
+            }));
+        }
+        
+        // Обновление отображения
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('tracks').textContent = unlockedTracks.length;
+        }
+        
+        // Показать уведомление
+        function showNotification(text) {
+            const notif = document.getElementById('notification');
+            notif.textContent = text;
+            notif.style.display = 'block';
+            setTimeout(() => {
+                notif.style.display = 'none';
+            }, 3000);
+        }
+        
+        // ПРОСТАЯ ИГРА
+        function startGame() {
+            document.getElementById('gameArea').style.display = 'block';
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            gameActive = true;
+            let targets = [];
+            
+            // Создание целей
+            function createTarget() {
+                targets.push({
+                    x: Math.random() * 250,
+                    y: Math.random() * 250,
+                    size: 30 + Math.random() * 20,
+                    color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                    lifetime: 100
+                });
+            }
+            
+            // Клик по канвасу
+            canvas.onclick = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Проверка попадания
+                for (let i = targets.length - 1; i >= 0; i--) {
+                    const target = targets[i];
+                    const dist = Math.sqrt((x - target.x - target.size/2) ** 2 + 
+                                          (y - target.y - target.size/2) ** 2);
+                    
+                    if (dist < target.size/2) {
+                        targets.splice(i, 1);
+                        score += 10;
+                        updateDisplay();
+                        saveData();
+                        
+                        // Шанс получить трек
+                        if (Math.random() < 0.3 && unlockedTracks.length < allTracks.length) {
+                            unlockRandomTrack();
+                        }
+                        
+                        showNotification('+10 очков!');
+                        break;
+                    }
+                }
+            };
+            
+            // Игровой цикл
+            function gameLoop() {
+                if (!gameActive) return;
+                
+                // Очистка
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, 300, 300);
+                
+                // Создание новых целей
+                if (Math.random() < 0.02) {
+                    createTarget();
+                }
+                
+                // Обновление и отрисовка целей
+                for (let i = targets.length - 1; i >= 0; i--) {
+                    const target = targets[i];
+                    target.lifetime--;
+                    
+                    if (target.lifetime <= 0) {
+                        targets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    // Рисуем цель
+                    ctx.fillStyle = target.color;
+                    ctx.globalAlpha = target.lifetime / 100;
+                    ctx.fillRect(target.x, target.y, target.size, target.size);
+                    ctx.globalAlpha = 1;
+                }
+                
+                requestAnimationFrame(gameLoop);
+            }
+            
+            gameLoop();
+        }
+        
+        // Остановка игры
+        function stopGame() {
+            gameActive = false;
+            document.getElementById('gameArea').style.display = 'none';
+        }
+        
+        // Разблокировка трека
+        function unlockRandomTrack() {
+            const locked = allTracks.filter(t => !unlockedTracks.includes(t.id));
+            if (locked.length > 0) {
+                const track = locked[Math.floor(Math.random() * locked.length)];
+                unlockedTracks.push(track.id);
+                saveData();
+                updateDisplay();
+                showNotification(`🎵 Новый трек: ${track.name}!`);
+            }
+        }
+        
+        // Показать треки
+        function showTracks() {
+            document.getElementById('tracksArea').style.display = 'block';
+            const listEl = document.getElementById('trackList');
+            listEl.innerHTML = '';
+            
+            allTracks.forEach(track => {
+                const isUnlocked = unlockedTracks.includes(track.id);
+                const div = document.createElement('div');
+                div.className = `track ${isUnlocked ? '' : 'locked'}`;
+                div.innerHTML = `
+                    <span>${isUnlocked ? '🎵' : '🔒'} ${track.name} - ${track.artist}</span>
+                    <button onclick="playTrack(${track.id})" ${isUnlocked ? '' : 'disabled'}>
+                        ${isUnlocked ? '▶️' : '🔒'}
+                    </button>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+        
+        // Скрыть треки
+        function hideTracks() {
+            document.getElementById('tracksArea').style.display = 'none';
+        }
+        
+        // Воспроизвести трек
+        function playTrack(id) {
+            const track = allTracks.find(t => t.id === id);
+            if (track) {
+                showNotification(`▶️ Играет: ${track.name}`);
+            }
+        }
+        
+        // Сброс прогресса
+        function resetAll() {
+            if (confirm('Вы уверены? Весь прогресс будет удален!')) {
+                score = 0;
+                unlockedTracks = [];
+                saveData();
+                updateDisplay();
+                showNotification('Прогресс сброшен!');
+            }
+        }
+        
+        // Инициализация
+        loadData();
+        
+        // Проверка работы
+        console.log('Приложение загружено! Версия: TEST');
+        showNotification('Добро пожаловать в Soundkeeper!');
+    </script>
+</body>
+</html>
