@@ -2402,33 +2402,7 @@ function drawUI() {
     ctx.fillStyle = '#feca57';
     ctx.fillText(`Мир: ${currentWorld + 1}`, 10, 87);
     
-    // КНОПКА ПОЛНОГО ЭКРАНА (ПРАВЫЙ ВЕРХНИЙ УГОЛ)
-    const fullscreenX = canvas.width - 45;
-    const fullscreenY = 5;
-    const fullscreenWidth = 40;
-    const fullscreenHeight = 35;
-    
-    // Фон кнопки
-    ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    ctx.fillRect(fullscreenX, fullscreenY, fullscreenWidth, fullscreenHeight);
-    
-    // Градиентная заливка
-    const btnGradient = ctx.createLinearGradient(fullscreenX, fullscreenY, fullscreenX, fullscreenY + fullscreenHeight);
-    btnGradient.addColorStop(0, 'rgba(78,205,196,0.3)');
-    btnGradient.addColorStop(1, 'rgba(78,205,196,0.1)');
-    ctx.fillStyle = btnGradient;
-    ctx.fillRect(fullscreenX, fullscreenY, fullscreenWidth, fullscreenHeight);
-    
-    // Рамка
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(fullscreenX, fullscreenY, fullscreenWidth, fullscreenHeight);
-    
-    // Иконка полного экрана
-    ctx.fillStyle = '#4ecdc4';
-    ctx.font = 'bold 20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('⛶', fullscreenX + fullscreenWidth/2, fullscreenY + 25);
+   
     
     // Характеристики (сдвигаем ниже, чтобы не перекрывались с кнопкой)
     ctx.font = '9px Arial';
