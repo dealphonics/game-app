@@ -25,7 +25,10 @@ body{
 .hidden{display:none}
 
 /* Modals */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px;z-index:1200}
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  display:flex;align-items:center;justify-content:center;padding:16px;z-index:1200
+}
 .modal-content{
   background:var(--panel);border:1px solid var(--border);border-radius:16px;
   max-width:420px;width:100%;overflow:hidden;
@@ -42,8 +45,10 @@ body{
   padding:12px;flex:1 1 auto;min-height:0;overflow-y:auto; /* скролл внутри модалки */
 }
 
-/* — Важно — приподнимаем окно игры, чтобы кнопки не перекрывал плеер */
-#gameModal .modal-body{ padding-bottom: 180px; }
+/* Важно: поднимаем игровое окно над плеером — жёсткий нижний padding */
+#gameModal .modal-body{
+  padding: 12px 12px 220px 12px !important; /* override любых ранних правил */
+}
 
 /* Game */
 .game-frame{
