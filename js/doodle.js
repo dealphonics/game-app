@@ -1,5 +1,4 @@
-// Doodle Jump • premium (fixed meters, smoother camera, moderate tilt, proper shooting,
-// invulnerability with boots/jetpack, stylized models)
+// Doodle Jump • premium (moderate tilt, stronger jetpack, invul while gear, smooth camera, fixed meters)
 window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -21,39 +20,40 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     shotCooldown: 0 // frames
   };
 
-  // World arrays
+  // World
   let plats=[], mobs=[], bullets=[], particles=[], pickups=[];
 
   // Input
   let tiltEnabled=false, tiltX=0;
 
-  // Stars parallax
+  // Background
   const starsA = spawnStars(35), starsB=spawnStars(25), starsC=spawnStars(15);
   function spawnStars(n){ return Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+0.5})) }
 
-  // Enable tilt on start (works under user gesture "Играть")
   function enableTilt(){
     if(tiltEnabled) return;
     if(typeof DeviceOrientationEvent !== 'undefined' &&
       typeof DeviceOrientationEvent.requestPermission === 'function'){
       DeviceOrientationEvent.requestPermission()
         .then(state=>{
-          if(state==='granted'){ window.addEventListener('deviceorientation', onTilt, {passive:true}); tiltEnabled=true; }
+          if(state==='granted'){
+            window.addEventListener('deviceorientation', onTilt, {passive:true});
+            tiltEnabled=true;
+          }
         }).catch(()=>{ /* ignore */ });
-    } else {
+    }else{
       window.addEventListener('deviceorientation', onTilt, {passive:true});
       tiltEnabled=true;
     }
   }
   function onTilt(e){
     if(e && typeof e.gamma==='number'){
-      // умеренная чувствительность
       const g = Math.max(-20, Math.min(20, e.gamma));
-      tiltX = g / 15; // ~-1.3..1.3
+      tiltX = g / 15; // умеренно-чувствительное
     }
   }
 
-  // Shooting by tap — одиночный выстрел сразу
+  // Tap shoot (instant)
   canvas.addEventListener('pointerdown', shoot, {passive:true});
   canvas.addEventListener('touchstart', shoot, {passive:true});
 
@@ -72,11 +72,11 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     player.x=W/2; player.y=H-100; player.vx=0; player.vy=0;
     player.shield=0; player.jetpack=0; player.boots=0; player.shotCooldown=0; player.invul=0;
 
-    baseY = player.y;
-    minY = player.y;
+    baseY = player.y; minY = player.y;
 
     plats=[]; mobs=[]; bullets=[]; particles=[]; pickups=[];
 
+    // base + ladder
     plats.push({x: W/2-45, y: H-22, w: 90, h: 12, type:'solid', vx:0, life:Infinity});
     for(let i=1;i<14;i++) plats.push(makePlat(H-22 - i*58));
   }
@@ -102,7 +102,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
   function shoot(){
     if(player.shotCooldown>0) return;
-    bullets.push({x:player.x+player.w/2-2, y:player.y+2, vy:-8.4, r:3});
+    bullets.push({x:player.x+player.w/2-2, y:player.y+2, vy:-8.6, r:3});
     player.shotCooldown=10;
     tg.HapticFeedback.impactOccurred('light');
   }
@@ -111,7 +111,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function randSign(){ return Math.random()<0.5?-1:1; }
 
   function update(){
-    // Tilt: средняя чувствительность + сглаживание
+    // Tilt control (moderate + smoothing)
     if(tiltEnabled){
       const target = tiltX * player.baseSpeed * 2.6;
       player.vx += (target - player.vx)*0.4;
@@ -120,13 +120,14 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     if(player.shotCooldown>0) player.shotCooldown--;
     if(player.invul>0) player.invul--;
 
-    // Invulnerability while gear active
+    // Gear invulnerability (boots/jetpack)
     const gearInvul = (player.jetpack>0 || player.boots>0);
 
     // Physics
     if(player.jetpack>0){
-      player.vy += 0.15;
-      player.vy = Math.min(player.vy, -4.2);
+      // Сильнее, быстрее и дольше тянет вверх
+      player.vy -= 0.28;                 // ускоряем вверх
+      if(player.vy < -7.2) player.vy = -7.2; // лимит максимальной скорости вверх
       player.jetpack--;
       particles.push({x:player.x+player.w/2+rand(-3,3), y:player.y+player.h, life:12, color:'#fa5'});
     }else{
@@ -150,7 +151,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
         if(player.x+player.w>p.x && player.x<p.x+p.w &&
            player.y+player.h>p.y && player.y+player.h<p.y+p.h + player.vy){
           player.y = p.y - player.h;
-          const boost = player.boots>0 ? 1.65 : 1;
+          const boost = player.boots>0 ? 1.7 : 1.0;
           player.vy = player.jump*boost;
           tg.HapticFeedback.impactOccurred('light');
           if(p.type==='crumble'||p.type==='disappear'){ p.life--; if(p.life<=0) p.y=-9999; }
@@ -181,17 +182,15 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
          player.x+player.w>m.x && player.x<m.x+m.w &&
          player.y+player.h>m.y && player.y<m.y+m.h){
         if(player.vy>0 && player.y<m.y){
-          m.alive=false; player.vy = player.jump*(player.boots>0?1.7:1);
+          m.alive=false; player.vy = player.jump*(player.boots>0?1.8:1.2);
           particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#6f6'});
           tg.HapticFeedback.impactOccurred('medium');
           if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
         }else{
-          // gear invulnerability or shield/invul
           if(gearInvul || player.invul>0 || player.shield>0){
             if(player.shield>0){ player.shield=0; player.invul=45; }
             else { player.invul = Math.max(player.invul, 30); }
-            // мягкий отскок
-            player.vy = -3;
+            player.vy = -3; // мягкий отскок
             tg.HapticFeedback.impactOccurred('light');
           }else{
             running=false; // game over
@@ -200,7 +199,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
     });
 
-    // Bullets (remove when above camera)
+    // Bullets (drop only when above camera margin)
     bullets.forEach(b=>{ b.y += b.vy; });
     bullets = bullets.filter(b=> b.y > camY - 60);
 
@@ -209,15 +208,15 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       if(player.x+player.w>f.x && player.x<f.x+f.w &&
          player.y+player.h>f.y && player.y<f.y+f.h){
         if(f.type==='boots')   player.boots   = 60*6;   // 6s
-        if(f.type==='jetpack') player.jetpack = 60*4;   // 4s
-        if(f.type==='shield')  player.shield  = 1;      // until hit
+        if(f.type==='jetpack') player.jetpack = 60*6;   // дольше 6s
+        if(f.type==='shield')  player.shield  = 1;      // до удара
         f.y=-9999;
         particles.push({x:f.x+f.w/2,y:f.y,life:20,color:'#fff'});
         tg.HapticFeedback.impactOccurred('light');
       }
     });
 
-    // Camera (smooth, no jitter)
+    // Camera smooth upward only
     const desired = player.y - H*0.58;
     if(desired < camY){ camY += (desired - camY)*0.12; }
 
@@ -230,7 +229,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       if(plats.length>54) plats.splice(0,1);
     }
 
-    // Meters independent of camera — от базовой точки
+    // Meters independent of camera
     if(player.y < minY) minY = player.y;
     const meters = Math.max(0, Math.floor((baseY - minY)/10));
     if(meters !== prevMeters){ prevMeters = meters; onScore?.(meters); }
@@ -249,7 +248,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   function draw(){
-    // Cosmic BG by meters
     const hue = (220 + (prevMeters/4)) % 360;
     const g = ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0, `hsl(${hue},30%,10%)`);
@@ -269,11 +267,10 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
     const offY = -camY;
 
-    // Nebula rings
     ctx.strokeStyle=`hsla(${(hue+80)%360},70%,60%,0.2)`; ctx.lineWidth=2;
     for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(W/2, (H/2)+offY + i*120, 120+i*30, 0, Math.PI*2); ctx.stroke(); }
 
-    // Platforms (stylish)
+    // Platforms
     plats.forEach(p=>{
       if(p.y+offY>H+20) return;
       let grad = ctx.createLinearGradient(p.x, p.y+offY, p.x, p.y+offY+p.h);
@@ -285,14 +282,14 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       ctx.strokeStyle='rgba(255,255,255,0.08)'; roundRect(p.x, p.y+offY, p.w, p.h, 3, false);
     });
 
-    // Mobs (rounded body, eyes, teeth)
+    // Mobs
     mobs.forEach(m=>{
       if(!m.alive) return;
       const y=m.y+offY; if(y<-30||y>H+30) return;
       drawMob(m.x,y,m.w,m.h, m.type==='walker'?'#ff6b6b':'#45b7d1');
     });
 
-    // Pickups — модельки
+    // Pickups
     pickups.forEach(f=>{
       const y=f.y+offY; if(y<-30||y>H+30) return;
       if(f.type==='boots')   drawBoots(f.x,y,f.w,f.h);
@@ -303,11 +300,10 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     // Bullets
     bullets.forEach(b=>{
       ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(b.x, b.y+offY, b.r, 0, Math.PI*2); ctx.fill();
-      // light trail
       ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(b.x-1, b.y+offY+2, 2, 6);
     });
 
-    // Player — “не копия”, но близко по духу
+    // Player
     drawPlayer(player.x, player.y+offY);
 
     // Particles
@@ -326,74 +322,37 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     ctx.arcTo(x,y,x+w,y,r);
     if(fill) ctx.fill(); else ctx.stroke();
   }
-
   function drawMob(x,y,w,h,base){
-    const body = ctx.createLinearGradient(x,y,x,y+h);
-    body.addColorStop(0, base);
-    body.addColorStop(1, '#fff5');
-    ctx.fillStyle=body;
-    roundRect(x,y,w,h,5,true);
-
-    // eyes
-    ctx.fillStyle='#000';
+    const g = ctx.createLinearGradient(x,y,x,y+h);
+    g.addColorStop(0, base); g.addColorStop(1, '#fff5');
+    ctx.fillStyle=g; roundRect(x,y,w,h,5,true);
+    ctx.fillStyle='#000'; // eyes
     ctx.beginPath(); ctx.arc(x+6,y+6,2,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(x+w-6,y+6,2,0,Math.PI*2); ctx.fill();
-
-    // mouth
-    ctx.strokeStyle='#000'; ctx.lineWidth=1;
+    ctx.strokeStyle='#000'; ctx.lineWidth=1; // mouth
     ctx.beginPath(); ctx.moveTo(x+5,y+h-7); ctx.lineTo(x+w-5,y+h-7); ctx.stroke();
   }
-
   function drawBoots(x,y,w,h){
-    // подошва
-    ctx.fillStyle='#f5d66d';
-    roundRect(x, y+h-6, w, 6, 3, true);
-    // голенище
-    ctx.fillStyle='#f1c40f';
-    roundRect(x+3, y+2, w-6, h-8, 4, true);
-    // блеск
+    ctx.fillStyle='#f5d66d'; roundRect(x, y+h-6, w, 6, 3, true);
+    ctx.fillStyle='#f1c40f'; roundRect(x+3, y+2, w-6, h-8, 4, true);
     ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(x+4,y+4, w-10, 2);
   }
   function drawJetpack(x,y,w,h){
-    // корпус
-    ctx.fillStyle='#ff8e53';
-    roundRect(x+2, y+2, w-4, h-8, 4, true);
-    // сопла
-    ctx.fillStyle='#c0392b';
-    roundRect(x+4, y+h-8, 6, 6, 2, true);
-    roundRect(x+w-10, y+h-8, 6, 6, 2, true);
-    // индикатор
+    ctx.fillStyle='#ff8e53'; roundRect(x+2, y+2, w-4, h-8, 4, true);
+    ctx.fillStyle='#c0392b'; roundRect(x+4, y+h-8, 6, 6, 2, true); roundRect(x+w-10, y+h-8, 6, 6, 2, true);
     ctx.fillStyle='#fff'; ctx.fillRect(x+w/2-2, y+6, 4, 6);
   }
   function drawShield(x,y,w,h){
     ctx.strokeStyle='rgba(78,205,196,0.9)'; ctx.lineWidth=2;
     roundRect(x+2,y+2,w-4,h-4,6,false);
   }
-
   function drawPlayer(x,y){
-    // тело — слегка овал
-    ctx.fillStyle='#eceff4';
-    roundRect(x, y, player.w, player.h, 6, true);
-
-    // визор
-    ctx.fillStyle='#45b7d1';
-    roundRect(x+5, y+5, player.w-10, 9, 4, true);
-
-    // ножки
-    ctx.fillStyle='#777';
-    ctx.fillRect(x+5, y+player.h-4, 6, 4);
-    ctx.fillRect(x+player.w-11, y+player.h-4, 6, 4);
-
-    // пламя от jetpack
-    if(player.jetpack>0){
-      ctx.fillStyle='rgba(255,150,0,0.8)';
-      ctx.fillRect(x+player.w/2-2, y+player.h, 4, 12);
-    }
-
-    // аура щита/неуязвимости
+    ctx.fillStyle='#eceff4'; roundRect(x, y, player.w, player.h, 6, true);
+    ctx.fillStyle='#45b7d1'; roundRect(x+5, y+5, player.w-10, 9, 4, true);
+    ctx.fillStyle='#777'; ctx.fillRect(x+5, y+player.h-4, 6, 4); ctx.fillRect(x+player.w-11, y+player.h-4, 6, 4);
+    if(player.jetpack>0){ ctx.fillStyle='rgba(255,150,0,0.8)'; ctx.fillRect(x+player.w/2-2, y+player.h, 4, 12); }
     if(player.shield>0 || player.invul>0 || player.jetpack>0 || player.boots>0){
-      ctx.strokeStyle='rgba(78,205,196,0.9)'; ctx.lineWidth=2;
-      roundRect(x-2, y-2, player.w+4, player.h+4, 8, false);
+      ctx.strokeStyle='rgba(78,205,196,0.9)'; ctx.lineWidth=2; roundRect(x-2, y-2, player.w+4, player.h+4, 8, false);
     }
   }
 
