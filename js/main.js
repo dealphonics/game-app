@@ -1,5 +1,5 @@
 (function(){
-  const SKEY = 'sk_state_v1';
+  const SKEY = 'sk_state_v2';
   const state = loadState();
 
   // DOM
@@ -17,7 +17,9 @@
     btnRestart: document.getElementById('btnRestart'),
     btnPause: document.getElementById('btnPause'),
     tracksList: document.getElementById('tracksList'),
-    toast: document.getElementById('toast')
+    toast: document.getElementById('toast'),
+    albumSearch: document.getElementById('albumSearch'),
+    albumList: document.getElementById('albumList')
   };
 
   let controller = null;
@@ -66,28 +68,47 @@
   el.btnRestart.addEventListener('click', startGame);
   el.btnPause.addEventListener('click', pauseResumeGame);
 
-  // Album tabs
-  document.querySelectorAll('.album-tab').forEach(tab=>{
-    tab.addEventListener('click', ()=>{
-      document.querySelectorAll('.album-tab').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      currentAlbum = tab.getAttribute('data-album');
-      renderTracks();
-    });
+  // Album list click
+  el.albumList.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.album-item');
+    if(!btn) return;
+    el.albumList.querySelectorAll('.album-item').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentAlbum = btn.getAttribute('data-album');
+    renderTracks();
   });
 
-  // Init
+  // Album search
+  el.albumSearch.addEventListener('input', ()=>{
+    const q = el.albumSearch.value.trim().toLowerCase();
+    if(!q) return;
+    const map = { 'альбом 1':'album1', 'album 1':'album1', 'альбом 2':'album2', 'album 2':'album2' };
+    const found = Object.keys(map).find(k=>k.includes(q));
+    if(found){
+      currentAlbum = map[found];
+      // highlight in list
+      el.albumList.querySelectorAll('.album-item').forEach(b=>{
+        b.classList.toggle('active', b.getAttribute('data-album')===currentAlbum);
+      });
+      renderTracks();
+    }
+  });
+
+  // Init UI
   updateStatsUI();
-  renderTracks(); // подготовим список
+  renderTracks();
 
   // Game
   function startGame(){
     stopGame();
     el.gameScore.textContent = '0';
     el.gameTime.textContent = '0:00';
-    controller = window.GameTarget(el.gameCanvas, (gameScore)=>{
-      el.gameScore.textContent = gameScore;
-    });
+    controller = window.GameTarget(
+      el.gameCanvas,
+      (gameScore)=>{ el.gameScore.textContent = gameScore; },
+      // onHitUnlock: разблокируем и показываем заметное уведомление
+      ()=> { instantUnlockOne(); }
+    );
     controller.start();
     el.btnPause.textContent = '⏸️ Пауза';
     el.btnPause.dataset.paused='0';
@@ -108,12 +129,20 @@
     const gained = parseInt(el.gameScore.textContent||'0',10) || 0;
     if(gained>0){
       state.score += gained;
-      maybeUnlockTrack();
+      // финальный шанс на разблокировку при завершении
+      if (Math.random()<0.25) {
+        const t = pickLockedRandom();
+        if (t) {
+          state.unlocked.push(t.id);
+          toast(`🎵 Новый трек: ${t.title}`);
+        }
+      }
       saveState();
       updateStatsUI();
       toast(`Игра окончена! +${gained} очков`);
     }
   }
+
   function startTimer(){
     stopTimer();
     const start = Date.now();
@@ -134,15 +163,23 @@
     });
     updateStatsUI();
   }
-  function maybeUnlockTrack(){
+
+  // Unlock helpers
+  function pickLockedRandom(){
     const all = Object.values(Music.albums).flat();
     const locked = all.filter(t=>!state.unlocked.includes(t.id));
-    if(locked.length===0) return;
-    if(Math.random()<0.25){
-      const t = locked[Math.floor(Math.random()*locked.length)];
-      state.unlocked.push(t.id);
-      toast(`🎵 Новый трек: ${t.title}`);
-    }
+    if(locked.length===0) return null;
+    return locked[Math.floor(Math.random()*locked.length)];
+  }
+  function instantUnlockOne(){
+    const t = pickLockedRandom();
+    if(!t) return;
+    state.unlocked.push(t.id);
+    saveState();
+    updateStatsUI();
+    // сразу обновим список, если музыка открыта
+    if (el.musicModal.style.display !== 'none') renderTracks();
+    toast(`🎉 Новый трек: ${t.title}`);
   }
 
   // UI & State
