@@ -58,16 +58,24 @@
 
   <!-- Music modal -->
   <div id="musicModal" class="modal" style="display:none">
-    <div class="modal-content">
+    <div class="modal-content solid">
       <div class="modal-header">
         <div class="modal-title">🎵 Музыкальная коллекция</div>
         <button class="modal-close" data-close="musicModal">✕</button>
       </div>
       <div class="modal-body">
-        <div class="album-tabs">
-          <button class="album-tab active" data-album="album1">Альбом 1</button>
-          <button class="album-tab" data-album="album2">Альбом 2</button>
+        <div class="album-picker">
+          <input id="albumSearch" type="search" placeholder="Найти альбом..." list="albumsData" />
+          <datalist id="albumsData">
+            <option value="Альбом 1"></option>
+            <option value="Альбом 2"></option>
+          </datalist>
+          <div class="album-list" id="albumList">
+            <button class="album-item active" data-album="album1">Альбом 1</button>
+            <button class="album-item" data-album="album2">Альбом 2</button>
+          </div>
         </div>
+
         <div id="tracksList"></div>
       </div>
     </div>
