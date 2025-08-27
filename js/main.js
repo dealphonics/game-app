@@ -1,5 +1,5 @@
 (function(){
-  const SKEY = 'sk_state_v6';
+  const SKEY = 'sk_state_v7';
   const state = loadState();
 
   const el = {
@@ -13,12 +13,15 @@
     gameScore: document.getElementById('gameScore'),
     gameTime: document.getElementById('gameTime'),
     gameCanvas: document.getElementById('gameCanvas'),
-    btnRestart: document.getElementById('btnRestart'),
-    btnPause: document.getElementById('btnPause'),
     tracksList: document.getElementById('tracksList'),
     toast: document.getElementById('toast'),
     albumSearch: document.getElementById('albumSearch'),
     searchResults: document.getElementById('searchResults'),
+    // Game over overlay
+    gameOverOverlay: document.getElementById('gameOverOverlay'),
+    goHeight: document.getElementById('goHeight'),
+    goBest: document.getElementById('goBest'),
+    btnPlayAgain: document.getElementById('btnPlayAgain'),
     // Player
     playerPrev: document.getElementById('playerPrev'),
     playerPlay: document.getElementById('playerPlay'),
@@ -35,12 +38,11 @@
   let currentAlbum='karmageddon';
   const player={ queue:[], index:-1, seeking:false };
 
-  // Modal helpers
   function showModal(id){ const m=document.getElementById(id); if(m) m.style.display='flex'; }
   function hideModal(id){
     const m=document.getElementById(id); if(!m) return;
     m.style.display='none';
-    if(id==='gameModal') stopGame();
+    if(id==='gameModal') stopGame(true);
   }
   document.querySelectorAll('.modal-close').forEach(btn=>{
     btn.addEventListener('click', ()=>{ const id=btn.getAttribute('data-close')||btn.closest('.modal')?.id; if(id) hideModal(id); });
@@ -50,15 +52,9 @@
   });
   document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ hideModal('gameModal'); hideModal('musicModal'); } });
 
-  // Actions
   el.btnPlay.addEventListener('click', ()=>{ showModal('gameModal'); startGame(); });
   el.btnMusic.addEventListener('click', ()=>{ showModal('musicModal'); renderTracks(); });
-  el.btnRestart.addEventListener('click', startGame);
-  el.btnPause.addEventListener('click', ()=>{
-    if(!doodle) return;
-    if(el.btnPause.dataset.paused==='1'){ doodle.resume(); el.btnPause.textContent='⏸️ Пауза'; el.btnPause.dataset.paused='0'; }
-    else { doodle.pause(); el.btnPause.textContent='▶️ Продолжить'; el.btnPause.dataset.paused='1'; }
-  });
+  el.btnPlayAgain.addEventListener('click', ()=>{ hideGameOver(); startGame(); });
 
   // Player bar
   el.playerPrev.addEventListener('click', ()=> prevTrack());
@@ -104,36 +100,40 @@
   // Init
   updateStatsUI(); renderTracks(); bindAudio();
 
-  // Game with tilt auto
   function startGame(){
-    stopGame();
+    hideGameOver();
+    stopGame(true);
     el.gameScore.textContent='0'; el.gameTime.textContent='0:00';
     doodle = window.Doodle(
       el.gameCanvas,
       meters => { el.gameScore.textContent = meters; },
-      evType => { attemptDrop(evType); },         // редкие дропы
-      () => { // onGameOver
-        stopGame();
-        // Покажем явный тост, модалка остаётся открыта с кнопкой "Заново"
-        toast('Игра окончена! Нажмите Заново, чтобы играть ещё.');
-      }
+      evType => { attemptDrop(evType); },
+      finalMeters => { stopGame(false, finalMeters); showGameOver(finalMeters); }
     );
-    doodle.enableTilt?.(); // запрос акселерометра на iOS
+    doodle.enableTilt?.();
     doodle.start();
-    el.btnPause.textContent='⏸️ Пауза'; el.btnPause.dataset.paused='0';
     startTimer();
   }
-  function stopGame(){
+
+  function stopGame(silent=false, finalMeters=null){
     try{ doodle?.stop(); }catch(e){}
     doodle=null; stopTimer();
     const gained = parseInt(el.gameScore.textContent||'0',10)||0;
-    if(gained>0){
+    if(!silent && gained>0){
       state.score += gained;
-      // Финальный шанс 8%
       if(Math.random()<0.08) unlockByRarity();
+      const best = loadBest(); const m = (finalMeters ?? gained);
+      if(m > best){ saveBest(m); }
       saveState(); updateStatsUI();
     }
   }
+
+  function showGameOver(meters){
+    el.goHeight.textContent = meters || el.gameScore.textContent;
+    el.goBest.textContent = loadBest();
+    el.gameOverOverlay.style.display='flex';
+  }
+  function hideGameOver(){ el.gameOverOverlay.style.display='none'; }
 
   // Rarity drop
   const weights = { common:70, rare:20, epic:8, legendary:2 };
@@ -166,7 +166,6 @@
   }
   function label(r){ return {common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный'}[r]||''; }
 
-  // Timer
   function startTimer(){
     stopTimer();
     const start=Date.now();
@@ -177,7 +176,6 @@
   }
   function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
 
-  // Music & player
   function renderTracks(){
     Music.renderTracks(el.tracksList, currentAlbum, state.unlocked, (track)=>{
       const curAlbumUnlocked = (Music.albums[currentAlbum]?.tracks||[]).filter(t=>state.unlocked.includes(t.id));
@@ -214,14 +212,8 @@
     if(a.paused){ a.play().then(()=> el.playerPlay.textContent='⏸️'); }
     else{ a.pause(); el.playerPlay.textContent='▶️'; }
   }
-  function nextTrack(){
-    if(!player.queue.length) return;
-    player.index=(player.index+1)%player.queue.length; playCurrent();
-  }
-  function prevTrack(){
-    if(!player.queue.length) return;
-    player.index=(player.index-1+player.queue.length)%player.queue.length; playCurrent();
-  }
+  function nextTrack(){ if(!player.queue.length) return; player.index=(player.index+1)%player.queue.length; playCurrent(); }
+  function prevTrack(){ if(!player.queue.length) return; player.index=(player.index-1+player.queue.length)%player.queue.length; playCurrent(); }
   function updateProgress(){
     const a=window.__currentAudio; if(!a) return;
     const cur=a.currentTime||0, dur=a.duration||0;
@@ -231,9 +223,7 @@
     el.playerTimeDur.textContent=isFinite(dur)?fmt(dur):'0:00';
   }
   function fmt(s){ const m=Math.floor(s/60), ss=Math.floor(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
-  function startSeek(e){
-    player.seeking=true; seekTo(e);
-  }
+  function startSeek(e){ player.seeking=true; seekTo(e); }
   function moveSeek(e){ if(player.seeking) seekTo(e); }
   function endSeek(){ player.seeking=false; }
   function seekTo(e){
@@ -244,7 +234,6 @@
     const dur=a.duration||0; if(dur>0){ a.currentTime=dur*ratio; updateProgress(); }
   }
 
-  // UI / State
   function updateStatsUI(){
     const total = Object.values(Music.albums).flatMap(a=>a.tracks).length;
     el.statScore.textContent = state.score;
@@ -255,6 +244,10 @@
     const t=el.toast; t.textContent=msg; t.classList.remove('hidden');
     clearTimeout(t._tmr); t._tmr=setTimeout(()=> t.classList.add('hidden'), 2000);
   }
+
+  function loadBest(){ try{ return parseInt(localStorage.getItem('sk_best_height')||'0',10)||0; }catch(e){ return 0; } }
+  function saveBest(v){ try{ localStorage.setItem('sk_best_height', String(v)); }catch(e){} }
+
   function loadState(){
     try{
       const raw=localStorage.getItem(SKEY);
