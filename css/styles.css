@@ -42,6 +42,9 @@ body{
   padding:12px;flex:1 1 auto;min-height:0;overflow-y:auto; /* скролл внутри модалки */
 }
 
+/* — Важно — приподнимаем окно игры, чтобы кнопки не перекрывал плеер */
+#gameModal .modal-body{ padding-bottom: 180px; }
+
 /* Game */
 .game-frame{
   border:1px solid var(--border);
