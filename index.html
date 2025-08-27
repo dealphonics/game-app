@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Soundkeeper • Stabilize</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">🎵 Soundkeeper</div>
+      <div class="tagline">Играй и открывай музыку</div>
+    </header>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-value" id="statScore">0</div>
+        <div class="stat-label">Очки</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statTracks">0/10</div>
+        <div class="stat-label">Треки</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statLevel">1</div>
+        <div class="stat-label">Уровень</div>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="btnPlay" class="btn primary">🎯 Играть (Попади в цель)</button>
+      <button id="btnMusic" class="btn accent">🎵 Моя коллекция</button>
+    </section>
+  </div>
+
+  <!-- Game modal -->
+  <div id="gameModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🎯 Попади в цель</div>
+        <button class="modal-close" data-close="gameModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="game-info">
+          <div><b>Счёт:</b> <span id="gameScore">0</span></div>
+          <div><b>Время:</b> <span id="gameTime">0:00</span></div>
+        </div>
+        <canvas id="gameCanvas" width="320" height="420"></canvas>
+        <div class="game-controls">
+          <button id="btnRestart" class="btn">🔄 Заново</button>
+          <button id="btnPause" class="btn">⏸️ Пауза</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Music modal -->
+  <div id="musicModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🎵 Музыкальная коллекция</div>
+        <button class="modal-close" data-close="musicModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="album-tabs">
+          <button class="album-tab active" data-album="album1">Альбом 1</button>
+          <button class="album-tab" data-album="album2">Альбом 2</button>
+        </div>
+        <div id="tracksList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="js/tg.js"></script>
+  <script src="js/game_target.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
