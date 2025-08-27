@@ -45,7 +45,7 @@ body{
   padding:12px;flex:1 1 auto;min-height:0;overflow-y:auto; /* скролл внутри модалки */
 }
 
-/* Важно: гарантированный зазор снизу у окна игры, чтобы не перекрывал плеер */
+/* Гарантированный зазор снизу у окна игры (поверх плеера) */
 #gameModal .modal-body{ padding: 12px 12px 220px 12px !important; }
 
 /* Game */
@@ -58,14 +58,14 @@ body{
 #gameCanvas{
   display:block;margin:0 auto;border:1px solid #000;border-radius:6px;background:#000;max-width:100%;touch-action:none;
 }
-.game-info{display:flex;gap:12px;justify-content:center;margin:8px 0;color:var(--muted)}
-.game-hint{margin-top:8px;text-align:center;color:#aab}
+.game-info{display:flex;gap:12px;justify-content:center;margin:8px 0;color:#c9c9d6}
 
 /* Game over overlay */
 .gameover-overlay{
-  position:absolute; inset:0; z-index:10;
+  position:absolute; inset:0; z-index:2000;
   background:rgba(0,0,0,0.65);
   display:flex; align-items:center; justify-content:center;
+  pointer-events:auto;
 }
 .gameover-panel{
   background:linear-gradient(135deg,#1e2233,#15192b);
