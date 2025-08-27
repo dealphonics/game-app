@@ -3,7 +3,6 @@ window.GameTarget = function(canvas, onScore, onHitUnlock){
   let rafId = 0, running = false, paused = false;
   let targets = [];
   let score = 0;
-  let startTime = 0;
 
   const clickHandler = (e)=>{
     if(!running || paused) return;
@@ -19,10 +18,7 @@ window.GameTarget = function(canvas, onScore, onHitUnlock){
         score += 10;
         onScore(score);
         tg.HapticFeedback.impactOccurred('light');
-        // шанс мгновенной разблокировки при попадании
-        if (typeof onHitUnlock === 'function' && Math.random() < 0.15) {
-          onHitUnlock();
-        }
+        if (typeof onHitUnlock === 'function' && Math.random() < 0.15) onHitUnlock();
         break;
       }
     }
@@ -70,7 +66,6 @@ window.GameTarget = function(canvas, onScore, onHitUnlock){
   function start(){
     stop();
     running = true; paused = false; score = 0; targets = [];
-    startTime = Date.now();
     canvas.addEventListener('click', clickHandler, {passive:true});
     canvas.addEventListener('touchstart', clickHandler, {passive:true});
     loop();
@@ -88,7 +83,6 @@ window.GameTarget = function(canvas, onScore, onHitUnlock){
     stop,
     pause: ()=>{ paused = true; },
     resume: ()=>{ paused = false; },
-    getScore: ()=>score,
-    getSeconds: ()=> Math.floor((Date.now()-startTime)/1000)
+    getScore: ()=>score
   };
 };
