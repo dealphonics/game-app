@@ -1,10 +1,9 @@
-// Doodle Jump • premium: moderate tilt, stronger jetpack, invul while gear, falling death + onGameOver
+// Doodle Jump • simplified death (no falling anim), moderate tilt, stronger jetpack, invul while gear
 window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
-  let mode='play'; // 'play' | 'dying' | 'stopped'
-  let raf=0, paused=false;
+  let running=false, raf=0;
   let camY=0, prevMeters=0, baseY=0, minY=0;
 
   const player = {
@@ -42,7 +41,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
   canvas.addEventListener('pointerdown', shoot, {passive:true});
   canvas.addEventListener('touchstart', shoot, {passive:true});
-
   window.addEventListener('keydown', e=>{
     if(e.key==='ArrowLeft'||e.key==='a') player.vx=-player.baseSpeed*2.0;
     if(e.key==='ArrowRight'||e.key==='d') player.vx= player.baseSpeed*2.0;
@@ -53,12 +51,11 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   });
 
   function reset(){
-    mode='play'; camY=0; prevMeters=0;
+    camY=0; prevMeters=0;
     player.x=W/2; player.y=H-100; player.vx=0; player.vy=0;
     player.shield=0; player.jetpack=0; player.boots=0; player.shotCooldown=0; player.invul=0;
 
     baseY = player.y; minY = player.y;
-
     plats=[]; mobs=[]; bullets=[]; particles=[]; pickups=[];
 
     plats.push({x: W/2-45, y: H-22, w: 90, h: 12, type:'solid', vx:0, life:Infinity});
@@ -85,7 +82,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   function shoot(){
-    if(mode!=='play') return;
     if(player.shotCooldown>0) return;
     bullets.push({x:player.x+player.w/2-2, y:player.y+2, vy:-8.6, r:3});
     player.shotCooldown=10;
@@ -96,128 +92,117 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function randSign(){ return Math.random()<0.5?-1:1; }
 
   function update(){
-    if(mode==='play'){
-      if(tiltEnabled){
-        const target = tiltX * player.baseSpeed * 2.6;
-        player.vx += (target - player.vx)*0.4;
-        if(Math.abs(player.vx)<0.06) player.vx=0;
-      }
-      if(player.shotCooldown>0) player.shotCooldown--;
-      if(player.invul>0) player.invul--;
+    // tilt
+    if(tiltEnabled){
+      const target = tiltX * player.baseSpeed * 2.6;
+      player.vx += (target - player.vx)*0.4;
+      if(Math.abs(player.vx)<0.06) player.vx=0;
+    }
+    if(player.shotCooldown>0) player.shotCooldown--;
+    if(player.invul>0) player.invul--;
 
-      const gearInvul = (player.jetpack>0 || player.boots>0);
+    const gearInvul = (player.jetpack>0 || player.boots>0);
 
-      if(player.jetpack>0){
-        player.vy -= 0.28;
-        if(player.vy < -7.2) player.vy = -7.2;
-        player.jetpack--;
-        particles.push({x:player.x+player.w/2+rand(-3,3), y:player.y+player.h, life:12, color:'#fa5'});
-      }else{
-        player.vy += 0.35;
-      }
-      player.x += player.vx; player.y += player.vy;
+    if(player.jetpack>0){
+      player.vy -= 0.28; if(player.vy < -7.2) player.vy = -7.2;
+      player.jetpack--;
+      particles.push({x:player.x+player.w/2+rand(-3,3), y:player.y+player.h, life:12, color:'#fa5'});
+    }else{
+      player.vy += 0.35;
+    }
+    player.x += player.vx; player.y += player.vy;
+    if(player.vx>0) player.dir=1; else if(player.vx<0) player.dir=-1;
+    if(player.x<-player.w) player.x=W; if(player.x>W) player.x=-player.w;
 
-      if(player.vx>0) player.dir=1; else if(player.vx<0) player.dir=-1;
-      if(player.x<-player.w) player.x=W;
-      if(player.x>W) player.x=-player.w;
+    plats.forEach(p=>{ if(p.type==='move'){ p.x+=p.vx; if(p.x<0||p.x+p.w>W) p.vx*=-1; } });
 
-      plats.forEach(p=>{ if(p.type==='move'){ p.x+=p.vx; if(p.x<0||p.x+p.w>W) p.vx*=-1; } });
-
-      if(player.vy>0){
-        for(const p of plats){
-          if(player.x+player.w>p.x && player.x<p.x+p.w &&
-             player.y+player.h>p.y && player.y+player.h<p.y+p.h + player.vy){
-            const boost = player.boots>0 ? 1.7 : 1;
-            player.y = p.y - player.h;
-            player.vy = player.jump*boost;
-            tg.HapticFeedback.impactOccurred('light');
-            if(p.type==='crumble'||p.type==='disappear'){ p.life--; if(p.life<=0) p.y=-9999; }
-            if(Math.random()<0.02 && typeof onAttemptDrop==='function') onAttemptDrop('landing');
-            break;
-          }
-        }
-      }
-
-      mobs.forEach(m=>{
-        if(!m.alive) return;
-        if(m.type==='walker'){ m.x+=m.vx; if(m.x<0||m.x+m.w>W) m.vx*=-1; }
-        else{ m.ph+=0.04; m.x+=m.vx; m.y+= Math.sin(m.ph)*0.9 + m.vy; if(m.x<0||m.x+m.w>W) m.vx*=-1; }
-
-        for(const b of bullets){
-          if(b.x>m.x && b.x<m.x+m.w && b.y>m.y && b.y<m.y+m.h){
-            m.alive=false; b.y=-9999;
-            particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#f66'});
-            tg.HapticFeedback.impactOccurred('medium');
-            if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
-          }
-        }
-
-        if(m.alive &&
-           player.x+player.w>m.x && player.x<m.x+m.w &&
-           player.y+player.h>m.y && player.y<m.y+m.h){
-          if(player.vy>0 && player.y<m.y){
-            m.alive=false; player.vy = player.jump*(player.boots>0?1.8:1.2);
-            particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#6f6'});
-            tg.HapticFeedback.impactOccurred('medium');
-            if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
-          }else{
-            if(gearInvul || player.invul>0 || player.shield>0){
-              if(player.shield>0){ player.shield=0; player.invul=45; }
-              else { player.invul = Math.max(player.invul, 30); }
-              player.vy = -3;
-              tg.HapticFeedback.impactOccurred('light');
-            }else{
-              mode='dying';
-            }
-          }
-        }
-      });
-
-      bullets.forEach(b=>{ b.y += b.vy; });
-      bullets = bullets.filter(b=> b.y > camY - 60);
-
-      pickups.forEach(f=>{
-        if(player.x+player.w>f.x && player.x<f.x+f.w &&
-           player.y+player.h>f.y && player.y<f.y+f.h){
-          if(f.type==='boots')   player.boots   = 60*6;
-          if(f.type==='jetpack') player.jetpack = 60*6;
-          if(f.type==='shield')  player.shield  = 1;
-          f.y=-9999;
-          particles.push({x:f.x+f.w/2,y:f.y,life:20,color:'#fff'});
+    if(player.vy>0){
+      for(const p of plats){
+        if(player.x+player.w>p.x && player.x<p.x+p.w &&
+           player.y+player.h>p.y && player.y+player.h<p.y+p.h + player.vy){
+          const boost = player.boots>0 ? 1.7 : 1;
+          player.y = p.y - player.h;
+          player.vy = player.jump*boost;
           tg.HapticFeedback.impactOccurred('light');
+          if(p.type==='crumble'||p.type==='disappear'){ p.life--; if(p.life<=0) p.y=-9999; }
+          if(Math.random()<0.02 && typeof onAttemptDrop==='function') onAttemptDrop('landing');
+          break;
         }
-      });
-
-      const desired = player.y - H*0.58;
-      if(desired < camY){ camY += (desired - camY)*0.12; }
-
-      while(plats.length && plats[plats.length-1].y > camY - 40){
-        const yTop = plats[plats.length-1].y - rand(56,64);
-        plats.push(makePlat(yTop));
-        if(Math.random()<0.22) spawnPickup(yTop-40);
-        if(Math.random()<0.25) spawnMob(yTop-30);
-        if(plats.length>54) plats.splice(0,1);
-      }
-
-      if(player.y < minY) minY = player.y;
-      const meters = Math.max(0, Math.floor((baseY - minY)/10));
-      if(meters !== prevMeters){ prevMeters = meters; onScore?.(meters); }
-
-      if(player.y - camY > H+72) mode='dying';
-    }
-    else if(mode==='dying'){
-      // падение с анимацией
-      player.vy += 0.5;
-      player.y += player.vy;
-      player.x += Math.sin(player.y*0.05)*0.3;
-
-      if(player.y - camY > H+120){
-        mode='stopped';
       }
     }
-    // particles
-    particles.forEach(p=>{ p.life--; });
-    particles = particles.filter(p=> p.life>0);
+
+    mobs.forEach(m=>{
+      if(!m.alive) return;
+      if(m.type==='walker'){ m.x+=m.vx; if(m.x<0||m.x+m.w>W) m.vx*=-1; }
+      else{ m.ph+=0.04; m.x+=m.vx; m.y+= Math.sin(m.ph)*0.9 + m.vy; if(m.x<0||m.x+m.w>W) m.vx*=-1; }
+
+      for(const b of bullets){
+        if(b.x>m.x && b.x<m.x+m.w && b.y>m.y && b.y<m.y+m.h){
+          m.alive=false; b.y=-9999;
+          particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#f66'});
+          tg.HapticFeedback.impactOccurred('medium');
+          if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
+        }
+      }
+
+      if(m.alive &&
+         player.x+player.w>m.x && player.x<m.x+m.w &&
+         player.y+player.h>m.y && player.y<m.y+m.h){
+        if(player.vy>0 && player.y<m.y){
+          m.alive=false; player.vy = player.jump*(player.boots>0?1.8:1.2);
+          particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#6f6'});
+          tg.HapticFeedback.impactOccurred('medium');
+          if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
+        }else{
+          if(gearInvul || player.invul>0 || player.shield>0){
+            if(player.shield>0){ player.shield=0; player.invul=45; } else { player.invul = Math.max(player.invul, 30); }
+            player.vy = -3;
+            tg.HapticFeedback.impactOccurred('light');
+          }else{
+            // смерть без анимации — сразу гасим игру
+            running=false;
+          }
+        }
+      }
+    });
+
+    bullets.forEach(b=>{ b.y += b.vy; });
+    bullets = bullets.filter(b=> b.y > camY - 60);
+
+    pickups.forEach(f=>{
+      if(player.x+player.w>f.x && player.x<f.x+f.w &&
+         player.y+player.h>f.y && player.y<f.y+f.h){
+        if(f.type==='boots')   player.boots   = 60*6;
+        if(f.type==='jetpack') player.jetpack = 60*6;
+        if(f.type==='shield')  player.shield  = 1;
+        f.y=-9999;
+        particles.push({x:f.x+f.w/2,y:f.y,life:20,color:'#fff'});
+        tg.HapticFeedback.impactOccurred('light');
+      }
+    });
+
+    const desired = player.y - H*0.58;
+    if(desired < camY){ camY += (desired - camY)*0.12; }
+
+    while(plats.length && plats[plats.length-1].y > camY - 40){
+      const yTop = plats[plats.length-1].y - rand(56,64);
+      plats.push(makePlat(yTop));
+      if(Math.random()<0.22) spawnPickup(yTop-40);
+      if(Math.random()<0.25) spawnMob(yTop-30);
+      if(plats.length>54) plats.splice(0,1);
+    }
+
+    if(player.y < minY) minY = player.y;
+    const meters = Math.max(0, Math.floor((baseY - minY)/10));
+    if(meters !== prevMeters){ prevMeters = meters; onScore?.(meters); }
+
+    if(player.y - camY > H+72){
+      // сразу оверлей через колбэк
+      running=false;
+      onGameOver?.(prevMeters);
+    }
+
+    particles.forEach(p=>{ p.life--; }); particles = particles.filter(p=> p.life>0);
   }
 
   function draw(){
@@ -278,20 +263,11 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       ctx.globalAlpha=Math.max(0,p.life/18);
       ctx.fillStyle=p.color; ctx.fillRect(p.x-2, p.y+offY-2, 4,4);
     }); ctx.globalAlpha=1;
-
-    if(mode==='dying'){
-      ctx.fillStyle='rgba(0,0,0,0.25)';
-      ctx.fillRect(0,0,W,H);
-    }
   }
 
-  function roundRect(x,y,w,h,r,fill){
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
+  function roundRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
     if(fill) ctx.fill(); else ctx.stroke();
   }
   function drawMob(x,y,w,h,base){
@@ -329,16 +305,16 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   function loop(){
-    if(mode==='stopped'){
+    if(!running){
       onGameOver?.(prevMeters);
       return;
     }
-    if(!paused){ update(); draw(); }
+    update(); draw();
     raf = requestAnimationFrame(loop);
   }
 
-  function start(){ stop(); reset(); enableTilt(); mode='play'; paused=false; loop(); }
-  function stop(){ mode='stopped'; paused=false; cancelAnimationFrame(raf); }
+  function start(){ stop(); reset(); enableTilt(); running=true; loop(); }
+  function stop(){ running=false; cancelAnimationFrame(raf); }
 
-  return { start, stop, pause:()=>{paused=true;}, resume:()=>{paused=false;}, enableTilt };
+  return { start, stop, pause:()=>{}, resume:()=>{}, enableTilt };
 };
