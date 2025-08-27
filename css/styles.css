@@ -4,7 +4,11 @@
   --txt:#fff;--muted:#c9c9d6;--primary:#667eea;--accent:#f5576c;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(135deg,#0f0f23,#1a1a2e);color:var(--txt)}
+body{
+  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  background:linear-gradient(135deg,#0f0f23,#1a1a2e);color:var(--txt);
+  padding-bottom:80px; /* чтобы плеер не перекрывал контент */
+}
 .container{max-width:420px;margin:0 auto;padding:16px}
 .header{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center}
 .logo{font-size:24px;font-weight:800;margin-bottom:6px}
@@ -20,14 +24,26 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;backgrou
 .btn:hover{filter:brightness(1.05)}
 .hidden{display:none}
 
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px;z-index:999}
-.modal-content{background:var(--panel);border:1px solid var(--border);border-radius:16px;max-width:420px;width:100%;overflow:hidden}
-.modal-content.solid{background:var(--panel-solid);} /* сплошной фон для музыки */
-.modal-header{background:linear-gradient(45deg,#667eea,#764ba2);display:flex;justify-content:space-between;align-items:center;padding:12px 14px}
+/* Modals */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px;z-index:1200}
+.modal-content{
+  background:var(--panel);border:1px solid var(--border);border-radius:16px;
+  max-width:420px;width:100%;overflow:hidden;
+  display:flex;flex-direction:column;max-height:85vh; /* фикс высота */
+}
+.modal-content.solid{background:var(--panel-solid);}
+.modal-header{
+  background:linear-gradient(45deg,#667eea,#764ba2);
+  display:flex;justify-content:space-between;align-items:center;padding:12px 14px;flex:0 0 auto;
+}
 .modal-title{font-weight:800}
 .modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:10px;cursor:pointer;width:32px;height:32px}
-.modal-body{padding:12px}
+.modal-body{
+  padding:12px;flex:1 1 auto;min-height:0; /* важно для скролла */
+  overflow-y:auto; /* внутренний скролл при большом числе треков */
+}
 
+/* Game */
 .game-frame{
   border:1px solid var(--border);
   border-radius:12px;
@@ -36,8 +52,8 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;backgrou
 }
 #gameCanvas{
   display:block;
-  margin:0 auto;           /* центрируем для симметрии */
-  border:1px solid #000;   /* внутренняя полоска для аккуратной рамки */
+  margin:0 auto;
+  border:1px solid #000;
   border-radius:6px;
   background:#000;
   max-width:100%;
@@ -45,6 +61,7 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;backgrou
 .game-info{display:flex;gap:12px;justify-content:center;margin:8px 0;color:var(--muted)}
 .game-controls{display:flex;gap:10px;justify-content:center;margin:8px 0}
 
+/* Music */
 .album-picker{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
 #albumSearch{
   width:100%;padding:10px 12px;border-radius:10px;
@@ -59,4 +76,27 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;backgrou
 .track .artist{color:var(--muted);font-size:12px}
 .track .play{background:var(--panel);border:1px solid var(--border);border-radius:10px;color:#fff;font-weight:700;padding:8px 12px;cursor:pointer}
 
-.toast{position:fixed;right:12px;bottom:12px;background:linear-gradient(45deg,#4ecdc4,#44a08d);padding:10px 14px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:1000}
+/* Toast */
+.toast{
+  position:fixed;right:12px;bottom:90px; /* подняли над плеером */
+  background:linear-gradient(45deg,#4ecdc4,#44a08d);padding:10px 14px;border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:1300
+}
+
+/* Player bar (always visible) */
+.player-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:1400;
+  background:linear-gradient(45deg,#1b1e2b,#23273a);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 12px;
+}
+.player-meta{min-width:0} /* truncate */
+.player-title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
+.player-artist{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
+.player-controls{display:flex;gap:8px}
+.pbtn{
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;color:#fff;
+  padding:8px 12px;cursor:pointer;font-weight:800;
+}
+.pbtn:hover{filter:brightness(1.08)}
