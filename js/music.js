@@ -1,5 +1,4 @@
 window.Music = (function(){
-  // Укажите репозиторий (если изменится)
   const baseRepo = 'dealphonics/game-app';
   const buildUrl = [
     rel => `https://raw.githubusercontent.com/${baseRepo}/main/${rel}`,
@@ -7,7 +6,6 @@ window.Music = (function(){
     rel => `https://raw.githubusercontent.com/${baseRepo}/master/${rel}`,
   ];
 
-  // Альбомы и файлы
   const albums = {
     karmageddon: {
       title:'Karmageddon', artist:'Kizaru',
@@ -74,13 +72,10 @@ window.Music = (function(){
         audio.volume = 0.9;
         await audio.play();
         window.__currentAudio = audio;
-        audio.onerror = ()=>{}; // пробуем следующий при явной ошибке в main.js, если захотим
         return;
-      }catch(e){
-        // try next
-      }
+      }catch(e){}
     }
-    // Фолбэк
+    // fallback beep + alert
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
       const ctx = new AC();
@@ -90,10 +85,9 @@ window.Music = (function(){
       osc.frequency.value = 520; gain.gain.value = 0.15;
       osc.start(); setTimeout(()=>{ osc.stop(); ctx.close(); }, 500);
     }catch(e){}
-    tg.showAlert('Не удалось воспроизвести трек с GitHub. Проверьте путь: '+track.path);
+    tg.showAlert('Не удалось воспроизвести трек с GitHub.\nПроверьте путь: '+track.path);
   }
 
-  // Поиск по трекам (для будущего добавления в очередь)
   function searchTracks(query){
     const q = (query||'').trim().toLowerCase();
     if(!q) return [];
