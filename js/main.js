@@ -17,7 +17,6 @@
     toast: document.getElementById('toast'),
     albumSearch: document.getElementById('albumSearch'),
     searchResults: document.getElementById('searchResults'),
-    // Game over overlay
     gameOverOverlay: document.getElementById('gameOverOverlay'),
     goHeight: document.getElementById('goHeight'),
     goBest: document.getElementById('goBest'),
@@ -38,23 +37,38 @@
   let currentAlbum='karmageddon';
   const player={ queue:[], index:-1, seeking:false };
 
-  function showModal(id){ const m=document.getElementById(id); if(m) m.style.display='flex'; }
+  function lockScroll(lock){
+    const html = document.documentElement, body=document.body;
+    if(lock){ html.classList.add('modal-lock'); body.classList.add('modal-lock'); }
+    else{ html.classList.remove('modal-lock'); body.classList.remove('modal-lock'); }
+  }
+
+  function showModal(id){ const m=document.getElementById(id); if(m){ m.style.display='flex'; if(id==='gameModal') lockScroll(true); } }
   function hideModal(id){
     const m=document.getElementById(id); if(!m) return;
     m.style.display='none';
-    if(id==='gameModal') stopGame(true);
+    if(id==='gameModal'){ stopGame(true); lockScroll(false); }
   }
+
   document.querySelectorAll('.modal-close').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ const id=btn.getAttribute('data-close')||btn.closest('.modal')?.id; if(id) hideModal(id); });
+    btn.addEventListener('click', (e)=>{ e.stopPropagation();
+      const id=btn.getAttribute('data-close')||btn.closest('.modal')?.id; if(id) hideModal(id); });
   });
   [el.gameModal, el.musicModal].forEach(mod=>{
-    mod.addEventListener('click', (e)=>{ if(e.target===mod) hideModal(mod.id); });
+    mod.addEventListener('click', (e)=>{ if(e.target===mod) hideModal(mod.id); }, {passive:true});
   });
   document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ hideModal('gameModal'); hideModal('musicModal'); } });
 
+  // Player bar: stop propagation to avoid conflict
+  [el.playerPrev, el.playerPlay, el.playerNext, el.playerProgress].forEach(b=>{
+    b.addEventListener('click', e=> e.stopPropagation());
+    b.addEventListener('pointerdown', e=> e.stopPropagation());
+    b.addEventListener('touchstart', e=> e.stopPropagation(), {passive:true});
+  });
+
   el.btnPlay.addEventListener('click', ()=>{ showModal('gameModal'); startGame(); });
   el.btnMusic.addEventListener('click', ()=>{ showModal('musicModal'); renderTracks(); });
-  el.btnPlayAgain.addEventListener('click', ()=>{ hideGameOver(); startGame(); });
+  el.btnPlayAgain.addEventListener('click', (e)=>{ e.stopPropagation(); hideGameOver(); startGame(); });
 
   // Player bar
   el.playerPrev.addEventListener('click', ()=> prevTrack());
@@ -77,7 +91,6 @@
     ];
     const match = map.find(m=> q && m.key.includes(q));
     if(match){ currentAlbum=match.album; renderTracks(); el.searchResults.style.display='none'; return; }
-
     if(q.length>=2){
       const res = Music.searchTracks(q);
       if(res.length){
@@ -97,7 +110,6 @@
     playCurrent(); el.searchResults.style.display='none';
   });
 
-  // Init
   updateStatsUI(); renderTracks(); bindAudio();
 
   function startGame(){
@@ -135,37 +147,27 @@
   }
   function hideGameOver(){ el.gameOverOverlay.style.display='none'; }
 
-  // Rarity drop
+  /* Rarity drop */
   const weights = { common:70, rare:20, epic:8, legendary:2 };
-  function attemptDrop(evType){
-    const p = evType==='kill' ? 0.03 : 0.02;
-    if(Math.random()<p) unlockByRarity();
-  }
+  function attemptDrop(evType){ const p = evType==='kill' ? 0.03 : 0.02; if(Math.random()<p) unlockByRarity(); }
   function unlockByRarity(){
     const all = Object.values(Music.albums).flatMap(a=>a.tracks);
-    const locked = all.filter(t=>!state.unlocked.includes(t.id));
-    if(!locked.length) return;
-
+    const locked = all.filter(t=>!state.unlocked.includes(t.id)); if(!locked.length) return;
     const by = {common:[], rare:[], epic:[], legendary:[]};
     locked.forEach(t=>{ if(by[t.rarity]) by[t.rarity].push(t); });
-
     const totalW = Object.keys(weights).reduce((s,k)=> s + (by[k].length? weights[k]:0),0);
     if(totalW===0) return;
     let r = Math.random()*totalW, rare='common';
-    for(const k of ['common','rare','epic','legendary']){
-      const w = by[k].length? weights[k]:0;
-      if(r<w){ rare=k; break; } r-=w;
-    }
+    for(const k of ['common','rare','epic','legendary']){ const w=by[k].length?weights[k]:0; if(r<w){ rare=k; break; } r-=w; }
     const pool = by[rare]; if(!pool || !pool.length) return;
     const t = pool[Math.floor(Math.random()*pool.length)];
-
-    state.unlocked.push(t.id);
-    saveState(); updateStatsUI();
+    state.unlocked.push(t.id); saveState(); updateStatsUI();
     if(el.musicModal.style.display!=='none') renderTracks();
     toast(`🎉 Новый трек (${label(rare)}): ${t.title}`);
   }
   function label(r){ return {common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный'}[r]||''; }
 
+  /* Timer */
   function startTimer(){
     stopTimer();
     const start=Date.now();
@@ -176,6 +178,7 @@
   }
   function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
 
+  /* Music & player */
   function renderTracks(){
     Music.renderTracks(el.tracksList, currentAlbum, state.unlocked, (track)=>{
       const curAlbumUnlocked = (Music.albums[currentAlbum]?.tracks||[]).filter(t=>state.unlocked.includes(t.id));
@@ -192,22 +195,20 @@
     if(player.index<0) player.index=0;
   }
   function playCurrent(){
-    const t=player.queue[player.index];
-    if(!t){ tg.showAlert('Очередь пуста'); return; }
-    el.playerTitle.textContent = t.title;
-    el.playerArtist.textContent = t.artist;
+    const t=player.queue[player.index]; if(!t){ tg.showAlert('Очередь пуста'); return; }
+    el.playerTitle.textContent = t.title; el.playerArtist.textContent = t.artist;
     Music.playAudio(t).then?.(()=>{}).catch?.(()=>{});
     setTimeout(bindAudio, 120);
     el.playerPlay.textContent='⏸️';
   }
   function bindAudio(){
-    const a = window.__currentAudio; if(!a) return;
+    const a=window.__currentAudio; if(!a) return;
     a.onended = ()=> nextTrack();
     a.ontimeupdate = ()=> updateProgress();
     a.onloadedmetadata = ()=> updateProgress(true);
   }
   function togglePlayPause(){
-    const a = window.__currentAudio;
+    const a=window.__currentAudio;
     if(!a){ if(player.queue.length>0) playCurrent(); return; }
     if(a.paused){ a.play().then(()=> el.playerPlay.textContent='⏸️'); }
     else{ a.pause(); el.playerPlay.textContent='▶️'; }
@@ -223,7 +224,7 @@
     el.playerTimeDur.textContent=isFinite(dur)?fmt(dur):'0:00';
   }
   function fmt(s){ const m=Math.floor(s/60), ss=Math.floor(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
-  function startSeek(e){ player.seeking=true; seekTo(e); }
+  function startSeek(e){ e.stopPropagation(); player.seeking=true; seekTo(e); }
   function moveSeek(e){ if(player.seeking) seekTo(e); }
   function endSeek(){ player.seeking=false; }
   function seekTo(e){
@@ -234,6 +235,7 @@
     const dur=a.duration||0; if(dur>0){ a.currentTime=dur*ratio; updateProgress(); }
   }
 
+  /* UI & State */
   function updateStatsUI(){
     const total = Object.values(Music.albums).flatMap(a=>a.tracks).length;
     el.statScore.textContent = state.score;
@@ -244,10 +246,8 @@
     const t=el.toast; t.textContent=msg; t.classList.remove('hidden');
     clearTimeout(t._tmr); t._tmr=setTimeout(()=> t.classList.add('hidden'), 2000);
   }
-
   function loadBest(){ try{ return parseInt(localStorage.getItem('sk_best_height')||'0',10)||0; }catch(e){ return 0; } }
   function saveBest(v){ try{ localStorage.setItem('sk_best_height', String(v)); }catch(e){} }
-
   function loadState(){
     try{
       const raw=localStorage.getItem(SKEY);
