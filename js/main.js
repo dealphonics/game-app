@@ -2,6 +2,7 @@
   const SKEY = 'sk_state_v1';
   const state = loadState();
 
+  // DOM
   const el = {
     statScore: document.getElementById('statScore'),
     statTracks: document.getElementById('statTracks'),
@@ -19,30 +20,53 @@
     toast: document.getElementById('toast')
   };
 
-  let controller = null; // game controller
+  let controller = null;
   let timerId = null;
   let currentAlbum = 'album1';
 
-  // Safe close buttons
-  document.querySelectorAll('.modal-close').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      const target = b.getAttribute('data-close');
-      closeModal(target);
+  // Modal helpers
+  function showModal(id){ const m=document.getElementById(id); if(m){ m.style.display='flex'; } }
+  function hideModal(id){
+    const m=document.getElementById(id);
+    if(!m) return;
+    m.style.display='none';
+    if(id==='gameModal'){ stopGame(); }
+  }
+
+  // Close buttons (✕)
+  document.querySelectorAll('.modal-close').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const targetId = btn.getAttribute('data-close') || btn.closest('.modal')?.id;
+      if(targetId) hideModal(targetId);
     });
   });
-
-  // Outside click closes modal
+  // Close by click on backdrop
   [el.gameModal, el.musicModal].forEach(mod=>{
     mod.addEventListener('click', (e)=>{
-      if(e.target === mod) mod.classList.add('hidden');
+      if(e.target === mod) hideModal(mod.id);
     });
   });
+  // Close by Esc
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      hideModal('gameModal');
+      hideModal('musicModal');
+    }
+  });
 
-  el.btnPlay.addEventListener('click', openGame);
-  el.btnMusic.addEventListener('click', openMusic);
-  el.btnRestart.addEventListener('click', restartGame);
+  // Actions
+  el.btnPlay.addEventListener('click', ()=>{
+    showModal('gameModal');
+    startGame();
+  });
+  el.btnMusic.addEventListener('click', ()=>{
+    showModal('musicModal');
+    renderTracks();
+  });
+  el.btnRestart.addEventListener('click', startGame);
   el.btnPause.addEventListener('click', pauseResumeGame);
 
+  // Album tabs
   document.querySelectorAll('.album-tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       document.querySelectorAll('.album-tab').forEach(t=>t.classList.remove('active'));
@@ -52,32 +76,11 @@
     });
   });
 
+  // Init
   updateStatsUI();
-  renderTracks();
+  renderTracks(); // подготовим список
 
-  // Expose selectAlbum for robustness (not strictly needed now)
-  window.selectAlbum = (id)=>{
-    currentAlbum = id;
-    renderTracks();
-  };
-
-  function openGame(){
-    el.gameModal.classList.remove('hidden');
-    startGame();
-  }
-
-  function closeModal(id){
-    const mod = document.getElementById(id);
-    if(!mod) return;
-    mod.classList.add('hidden');
-    if(id==='gameModal'){ stopGame(); }
-    if(id==='musicModal'){ /* nothing */ }
-  }
-
-  function openMusic(){
-    el.musicModal.classList.remove('hidden');
-  }
-
+  // Game
   function startGame(){
     stopGame();
     el.gameScore.textContent = '0';
@@ -86,35 +89,31 @@
       el.gameScore.textContent = gameScore;
     });
     controller.start();
+    el.btnPause.textContent = '⏸️ Пауза';
+    el.btnPause.dataset.paused='0';
     startTimer();
   }
-
-  function restartGame(){ startGame(); }
   function pauseResumeGame(){
     if(!controller) return;
     if(el.btnPause.dataset.paused === '1'){
-      controller.resume(); el.btnPause.textContent = '⏸️ Пауза'; el.btnPause.dataset.paused='0';
+      controller.resume(); el.btnPause.textContent='⏸️ Пауза'; el.btnPause.dataset.paused='0';
     }else{
-      controller.pause(); el.btnPause.textContent = '▶️ Продолжить'; el.btnPause.dataset.paused='1';
+      controller.pause(); el.btnPause.textContent='▶️ Продолжить'; el.btnPause.dataset.paused='1';
     }
   }
-
   function stopGame(){
     try{ controller?.stop(); }catch(e){}
     controller = null;
     stopTimer();
-    // начисление очков
     const gained = parseInt(el.gameScore.textContent||'0',10) || 0;
     if(gained>0){
       state.score += gained;
-      // шанс разблокировать трек
       maybeUnlockTrack();
       saveState();
       updateStatsUI();
       toast(`Игра окончена! +${gained} очков`);
     }
   }
-
   function startTimer(){
     stopTimer();
     const start = Date.now();
@@ -127,15 +126,14 @@
   }
   function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
 
+  // Music
   function renderTracks(){
     Music.renderTracks(el.tracksList, currentAlbum, state.unlocked, (track)=>{
-      // По клику — реальный клик, автоплей не блокируется
       Music.playAudio(track);
       toast(`▶️ ${track.title} — ${track.artist}`);
     });
     updateStatsUI();
   }
-
   function maybeUnlockTrack(){
     const all = Object.values(Music.albums).flat();
     const locked = all.filter(t=>!state.unlocked.includes(t.id));
@@ -147,21 +145,20 @@
     }
   }
 
+  // UI & State
   function updateStatsUI(){
     el.statScore.textContent = state.score;
     const total = Object.values(Music.albums).flat().length;
     el.statTracks.textContent = `${state.unlocked.length}/${total}`;
     el.statLevel.textContent = Math.floor(state.score/200)+1;
   }
-
   function toast(msg){
     const t = el.toast;
     t.textContent = msg;
     t.classList.remove('hidden');
     clearTimeout(t._tmr);
-    t._tmr = setTimeout(()=> t.classList.add('hidden'), 2000);
+    t._tmr = setTimeout(()=> t.classList.add('hidden'), 1800);
   }
-
   function loadState(){
     try{
       const raw = localStorage.getItem(SKEY);
