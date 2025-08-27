@@ -30,7 +30,7 @@
     </section>
 
     <section class="actions">
-      <button id="btnPlay" class="btn primary">🎯 Играть (Попади в цель)</button>
+      <button id="btnPlay" class="btn primary">🎯 Играть (Doodle Jump)</button>
       <button id="btnMusic" class="btn accent">🎵 Моя коллекция</button>
     </section>
   </div>
@@ -39,12 +39,12 @@
   <div id="gameModal" class="modal" style="display:none">
     <div class="modal-content">
       <div class="modal-header">
-        <div class="modal-title">🎯 Попади в цель</div>
+        <div class="modal-title">🎯 Doodle Jump</div>
         <button class="modal-close" data-close="gameModal">✕</button>
       </div>
       <div class="modal-body">
         <div class="game-info">
-          <div><b>Счёт:</b> <span id="gameScore">0</span></div>
+          <div><b>Высота:</b> <span id="gameScore">0</span> м</div>
           <div><b>Время:</b> <span id="gameTime">0:00</span></div>
         </div>
         <div class="game-frame">
@@ -72,6 +72,7 @@
             <option value="Karmageddon"></option>
             <option value="Психи попадают в топ"></option>
           </datalist>
+          <div id="searchResults" class="search-results" style="display:none"></div>
         </div>
         <div id="tracksList"></div>
       </div>
@@ -83,6 +84,13 @@
     <div class="player-meta">
       <div id="playerTitle" class="player-title">Нет трека</div>
       <div id="playerArtist" class="player-artist">—</div>
+      <div class="player-progress">
+        <div id="playerProgressFill" class="player-progress-fill"></div>
+      </div>
+      <div class="player-time">
+        <span id="playerTimeCur">0:00</span>
+        <span id="playerTimeDur">0:00</span>
+      </div>
     </div>
     <div class="player-controls">
       <button id="playerPrev" class="pbtn" title="Предыдущий">⏮️</button>
@@ -94,7 +102,7 @@
   <div id="toast" class="toast hidden"></div>
 
   <script src="./js/tg.js"></script>
-  <script src="./js/game_target.js"></script>
+  <script src="./js/doodle.js"></script>
   <script src="./js/music.js"></script>
   <script src="./js/main.js"></script>
 </body>
