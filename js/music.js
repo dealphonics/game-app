@@ -1,11 +1,18 @@
 window.Music = (function(){
+  // стабильные демо-треки
   const demoMap = {
-    t1: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_0ae50285c8.mp3?filename=soft-piano-ambient-110397.mp3',
-    t2: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_3a5f4c2f33.mp3?filename=lofi-study-112191.mp3',
-    t3: 'https://cdn.pixabay.com/download/audio/2022/10/31/audio_2d8feeccd2.mp3?filename=ambient-technology-112588.mp3',
-    t4: 'https://cdn.pixabay.com/download/audio/2022/07/19/audio_1aafde5963.mp3?filename=slow-ambient-112191.mp3',
-    t5: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_7f870f0673.mp3?filename=melody-of-nature-110689.mp3'
+    t1: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
+    t2: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    t3: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    t4: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    t5: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+    t6: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+    t7: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+    t8: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+    t9: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+    t10:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'
   };
+
   const albums = {
     album1: [
       {id:'t1', title:'Cosmic Journey', artist:'Space Beats'},
@@ -47,14 +54,18 @@ window.Music = (function(){
 
     const url = demoMap[track.id];
     if(url){
-      const audio = new Audio(url);
-      audio.volume = 0.8;
-      audio.play()
-        .then(()=>{ window.__currentAudio = audio; })
-        .catch(()=>{
-          tg.showAlert('Аудио заблокировано автоплеем: нажмите ещё раз по ▶️');
-        });
+      const audio = new Audio();
+      audio.src = url;
+      audio.preload = 'auto';
+      audio.crossOrigin = 'anonymous';
+      audio.volume = 0.85;
+      audio.play().then(()=>{
+        window.__currentAudio = audio;
+      }).catch(()=>{
+        tg.showAlert('Аудио заблокировано автоплеем: нажмите ещё раз по ▶️');
+      });
       audio.onended = ()=> window.__currentAudio = null;
+      audio.onerror = ()=> tg.showAlert('Не удалось загрузить аудио. Попробуйте другой трек.');
       return;
     }
 
