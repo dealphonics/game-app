@@ -1,5 +1,5 @@
 window.Music = (function(){
-  // Настройте при необходимости (если файлы в другом каталоге)
+  // Настройка репозитория/ветки/путей
   const baseRepo = 'dealphonics/game-app';
   const basePaths = [
     (rel)=>`https://raw.githubusercontent.com/${baseRepo}/main/${rel}`,
@@ -7,7 +7,7 @@ window.Music = (function(){
     (rel)=>`https://raw.githubusercontent.com/${baseRepo}/master/${rel}`
   ];
 
-  // Два альбома c реальными названиями и относительными путями к mp3
+  // Альбомы и файлы
   const albums = {
     karmageddon: {
       title:'Karmageddon', artist:'Kizaru',
@@ -64,7 +64,7 @@ window.Music = (function(){
     try{ window.__currentAudio?.pause(); }catch(e){}
     window.__currentAudio = null;
 
-    // Пробуем цепочку URL (raw main → pages → raw master)
+    // Перебор путей (raw main → pages → raw master)
     const candidates = basePaths.map(f => f(track.path));
 
     for (let i=0;i<candidates.length;i++){
