@@ -4,10 +4,11 @@
   --txt:#fff;--muted:#c9c9d6;--primary:#667eea;--accent:#f5576c;
 }
 *{box-sizing:border-box}
+html.modal-lock, body.modal-lock{ overflow:hidden !important; }
 body{
   margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
   background:linear-gradient(135deg,#0f0f23,#1a1a2e);color:var(--txt);
-  padding-bottom:96px; /* под плеер */
+  padding-bottom:96px; /* место под плеер */
 }
 .container{max-width:420px;margin:0 auto;padding:16px}
 .header{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center}
@@ -42,11 +43,14 @@ body{
 .modal-title{font-weight:800}
 .modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:10px;cursor:pointer;width:32px;height:32px}
 .modal-body{
-  padding:12px;flex:1 1 auto;min-height:0;overflow-y:auto; /* скролл внутри модалки */
+  padding:12px;flex:1 1 auto;min-height:0;overflow-y:auto; /* скролл внутри модалки по умолчанию */
 }
 
-/* Гарантированный зазор снизу у окна игры (поверх плеера) */
-#gameModal .modal-body{ padding: 12px 12px 220px 12px !important; }
+/* В игре скролл внутри отключаем, и даём нижний отступ, чтобы плеер не перекрывал */
+#gameModal .modal-body{
+  overflow: hidden !important;
+  padding: 12px 12px 160px 12px !important; /* гарантировано выше плеера */
+}
 
 /* Game */
 .game-frame{
@@ -56,7 +60,8 @@ body{
   padding:10px;background:#0b0b0f;
 }
 #gameCanvas{
-  display:block;margin:0 auto;border:1px solid #000;border-radius:6px;background:#000;max-width:100%;touch-action:none;
+  display:block;margin:0 auto;border:1px solid #000;border-radius:6px;background:#000;max-width:100%;
+  touch-action:none; /* без тач-скролла */
 }
 .game-info{display:flex;gap:12px;justify-content:center;margin:8px 0;color:#c9c9d6}
 
@@ -112,7 +117,7 @@ body{
   background:linear-gradient(45deg,#1b1e2b,#23273a);
   border-top:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:10px 12px;
+  padding:10px 12px; pointer-events:auto;
 }
 .player-meta{min-width:0;flex:1}
 .player-title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
