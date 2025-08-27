@@ -1,4 +1,4 @@
-window.GameTarget = function(canvas, onScore){
+window.GameTarget = function(canvas, onScore, onHitUnlock){
   const ctx = canvas.getContext('2d');
   let rafId = 0, running = false, paused = false;
   let targets = [];
@@ -19,6 +19,10 @@ window.GameTarget = function(canvas, onScore){
         score += 10;
         onScore(score);
         tg.HapticFeedback.impactOccurred('light');
+        // шанс мгновенной разблокировки при попадании
+        if (typeof onHitUnlock === 'function' && Math.random() < 0.15) {
+          onHitUnlock();
+        }
         break;
       }
     }
