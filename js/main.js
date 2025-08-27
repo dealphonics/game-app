@@ -1,5 +1,5 @@
 (function(){
-  const SKEY = 'sk_state_v3';
+  const SKEY = 'sk_state_v4';
   const state = loadState();
 
   // DOM
@@ -18,14 +18,28 @@
     btnPause: document.getElementById('btnPause'),
     tracksList: document.getElementById('tracksList'),
     toast: document.getElementById('toast'),
-    albumSearch: document.getElementById('albumSearch')
+    albumSearch: document.getElementById('albumSearch'),
+    // Player bar
+    playerBar: document.getElementById('playerBar'),
+    playerPrev: document.getElementById('playerPrev'),
+    playerPlay: document.getElementById('playerPlay'),
+    playerNext: document.getElementById('playerNext'),
+    playerTitle: document.getElementById('playerTitle'),
+    playerArtist: document.getElementById('playerArtist')
   };
 
   let controller = null;
   let timerId = null;
 
-  // Текущий альбом (karmageddon / psychi)
+  // Текущий альбом (поиск)
   let currentAlbum = 'karmageddon';
+
+  // Мини-плеер: очередь/текущий трек
+  const player = {
+    queue: [],         // массив треков
+    index: -1,         // индекс текущего в очереди
+    playing: false
+  };
 
   // Modal helpers
   function showModal(id){ const m=document.getElementById(id); if(m){ m.style.display='flex'; } }
@@ -69,11 +83,10 @@
   el.btnRestart.addEventListener('click', startGame);
   el.btnPause.addEventListener('click', pauseResumeGame);
 
-  // Album search (только поиск)
+  // Album search only
   el.albumSearch.addEventListener('input', ()=>{
     const q = el.albumSearch.value.trim().toLowerCase();
-    // Мэппинг по ключевым словам
-    const map = [
+    const candidates = [
       {key:'karmageddon', album:'karmageddon'},
       {key:'кармагеддон', album:'karmageddon'},
       {key:'kizaru', album:'karmageddon'},
@@ -81,12 +94,17 @@
       {key:'макс корж', album:'psychi'},
       {key:'psychi', album:'psychi'}
     ];
-    const found = map.find(m=> q && m.key.includes(q));
-    if(found){
-      currentAlbum = found.album;
+    const match = candidates.find(m=> q && m.key.includes(q));
+    if(match && currentAlbum!==match.album){
+      currentAlbum = match.album;
       renderTracks();
     }
   });
+
+  // Player controls
+  el.playerPrev.addEventListener('click', ()=> prevTrack());
+  el.playerPlay.addEventListener('click', ()=> togglePlayPause());
+  el.playerNext.addEventListener('click', ()=> nextTrack());
 
   // Init UI
   updateStatsUI();
@@ -100,8 +118,7 @@
     controller = window.GameTarget(
       el.gameCanvas,
       (gameScore)=>{ el.gameScore.textContent = gameScore; },
-      // onHitUnlock: разблокируем прямо в игре
-      ()=> { instantUnlockOne(); }
+      ()=> { instantUnlockOne(); } // onHitUnlock
     );
     controller.start();
     el.btnPause.textContent = '⏸️ Пауза';
@@ -136,7 +153,6 @@
       toast(`Игра окончена! +${gained} очков`);
     }
   }
-
   function startTimer(){
     stopTimer();
     const start = Date.now();
@@ -152,10 +168,70 @@
   // Music
   function renderTracks(){
     Music.renderTracks(el.tracksList, currentAlbum, state.unlocked, (track)=>{
-      Music.playAudio(track);
-      toast(`▶️ ${track.title} — ${track.artist}`);
+      // Строим очередь: разблокированные треки текущего альбома, иначе все разблокированные
+      const albumUnlocked = (Music.albums[currentAlbum]?.tracks || []).filter(t=>state.unlocked.includes(t.id));
+      const allUnlocked = Object.values(Music.albums).flatMap(a=>a.tracks).filter(t=>state.unlocked.includes(t.id));
+      const queue = albumUnlocked.length>0 ? albumUnlocked : allUnlocked;
+
+      if(queue.length===0){
+        tg.showAlert('Нет разблокированных треков. Откройте треки в игре.');
+        return;
+      }
+      setQueue(queue, track);
+      playCurrent();
     });
     updateStatsUI();
+  }
+
+  // Player helpers
+  function setQueue(queue, current){
+    player.queue = queue.slice();
+    player.index = Math.max(0, player.queue.findIndex(t=>t.id===current.id));
+    if(player.index === -1) player.index = 0;
+  }
+  function playCurrent(){
+    const track = player.queue[player.index];
+    if(!track){
+      tg.showAlert('Очередь пуста'); return;
+    }
+    el.playerTitle.textContent = track.title;
+    el.playerArtist.textContent = track.artist;
+    Music.playAudio(track).then?.(()=>{}).catch?.(()=>{});
+    // подождем и привяжем обработчики к текущему audio
+    setTimeout(bindAudioHandlers, 100);
+    setPlayIcon(true);
+    player.playing = true;
+  }
+  function bindAudioHandlers(){
+    const a = window.__currentAudio;
+    if(!a) return;
+    a.onended = ()=> { nextTrack(); };
+  }
+  function togglePlayPause(){
+    const a = window.__currentAudio;
+    if(!a){
+      // если не было — начнем с текущего
+      if(player.queue.length>0){ playCurrent(); }
+      return;
+    }
+    if(a.paused){
+      a.play().then(()=>{ setPlayIcon(true); player.playing=true; });
+    }else{
+      a.pause(); setPlayIcon(false); player.playing=false;
+    }
+  }
+  function nextTrack(){
+    if(player.queue.length===0) return;
+    player.index = (player.index+1) % player.queue.length;
+    playCurrent();
+  }
+  function prevTrack(){
+    if(player.queue.length===0) return;
+    player.index = (player.index-1+player.queue.length) % player.queue.length;
+    playCurrent();
+  }
+  function setPlayIcon(isPlaying){
+    el.playerPlay.textContent = isPlaying ? '⏸️' : '▶️';
   }
 
   // Unlock helpers
