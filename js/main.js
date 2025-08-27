@@ -33,10 +33,9 @@
 
   let doodle=null, timerId=null;
   let currentAlbum='karmageddon';
-
   const player={ queue:[], index:-1, seeking:false };
 
-  // Modal
+  // Modal helpers
   function showModal(id){ const m=document.getElementById(id); if(m) m.style.display='flex'; }
   function hideModal(id){
     const m=document.getElementById(id); if(!m) return;
@@ -44,9 +43,7 @@
     if(id==='gameModal') stopGame();
   }
   document.querySelectorAll('.modal-close').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const id=btn.getAttribute('data-close')||btn.closest('.modal')?.id; if(id) hideModal(id);
-    });
+    btn.addEventListener('click', ()=>{ const id=btn.getAttribute('data-close')||btn.closest('.modal')?.id; if(id) hideModal(id); });
   });
   [el.gameModal, el.musicModal].forEach(mod=>{
     mod.addEventListener('click', (e)=>{ if(e.target===mod) hideModal(mod.id); });
@@ -63,7 +60,7 @@
     else { doodle.pause(); el.btnPause.textContent='▶️ Продолжить'; el.btnPause.dataset.paused='1'; }
   });
 
-  // Player controls
+  // Player bar
   el.playerPrev.addEventListener('click', ()=> prevTrack());
   el.playerPlay.addEventListener('click', ()=> togglePlayPause());
   el.playerNext.addEventListener('click', ()=> nextTrack());
@@ -107,21 +104,21 @@
   // Init
   updateStatsUI(); renderTracks(); bindAudio();
 
-  // Game start with tilt enabled automatically
+  // Game with tilt auto
   function startGame(){
     stopGame();
     el.gameScore.textContent='0'; el.gameTime.textContent='0:00';
     doodle = window.Doodle(
       el.gameCanvas,
       meters => { el.gameScore.textContent = meters; },
-      (evType)=> { attemptDrop(evType); },                  // низкие шансы, редкость учитывается в unlockByRarity
-      ()=> { // onGameOver
-        stopGame();                                         // начисление, финальный шанс уже внутри stopGame
+      evType => { attemptDrop(evType); },         // редкие дропы
+      () => { // onGameOver
+        stopGame();
+        // Покажем явный тост, модалка остаётся открыта с кнопкой "Заново"
         toast('Игра окончена! Нажмите Заново, чтобы играть ещё.');
       }
     );
-    // Включить наклон сразу (под пользовательский клик “Играть”)
-    doodle.enableTilt?.();
+    doodle.enableTilt?.(); // запрос акселерометра на iOS
     doodle.start();
     el.btnPause.textContent='⏸️ Пауза'; el.btnPause.dataset.paused='0';
     startTimer();
@@ -132,56 +129,49 @@
     const gained = parseInt(el.gameScore.textContent||'0',10)||0;
     if(gained>0){
       state.score += gained;
-      // Финальный шанс: 8%
+      // Финальный шанс 8%
       if(Math.random()<0.08) unlockByRarity();
       saveState(); updateStatsUI();
     }
   }
 
-  // Drop logic with rarity
-  // Редкость: common 70%, rare 20%, epic 8%, legendary 2% (внутри — выбор из доступных)
-  const rarityWeights = { common:70, rare:20, epic:8, legendary:2 };
+  // Rarity drop
+  const weights = { common:70, rare:20, epic:8, legendary:2 };
   function attemptDrop(evType){
-    // Событийные вероятности
-    const p = evType==='kill' ? 0.03 : 0.02; // убийство моба/приземление
-    if(Math.random() < p) unlockByRarity();
+    const p = evType==='kill' ? 0.03 : 0.02;
+    if(Math.random()<p) unlockByRarity();
   }
   function unlockByRarity(){
-    // Собираем оставшиеся треки с редкостями
     const all = Object.values(Music.albums).flatMap(a=>a.tracks);
     const locked = all.filter(t=>!state.unlocked.includes(t.id));
     if(!locked.length) return;
 
-    // Группируем по редкостям
-    const byR = { common:[], rare:[], epic:[], legendary:[] };
-    locked.forEach(t=> { if(byR[t.rarity]) byR[t.rarity].push(t); });
+    const by = {common:[], rare:[], epic:[], legendary:[]};
+    locked.forEach(t=>{ if(by[t.rarity]) by[t.rarity].push(t); });
 
-    // Взвешенный выбор редкости
-    const totalW = Object.keys(rarityWeights).reduce((s,k)=> s + (byR[k].length? rarityWeights[k]:0),0);
+    const totalW = Object.keys(weights).reduce((s,k)=> s + (by[k].length? weights[k]:0),0);
     if(totalW===0) return;
-
-    let r = Math.random()*totalW, chosenR='common';
-    for(const key of ['common','rare','epic','legendary']){
-      const w = byR[key].length ? rarityWeights[key] : 0;
-      if(r < w){ chosenR = key; break; } r -= w;
+    let r = Math.random()*totalW, rare='common';
+    for(const k of ['common','rare','epic','legendary']){
+      const w = by[k].length? weights[k]:0;
+      if(r<w){ rare=k; break; } r-=w;
     }
-    // Случайный трек этой редкости
-    const pool = byR[chosenR];
-    if(!pool || !pool.length) return;
-    const track = pool[Math.floor(Math.random()*pool.length)];
+    const pool = by[rare]; if(!pool || !pool.length) return;
+    const t = pool[Math.floor(Math.random()*pool.length)];
 
-    state.unlocked.push(track.id);
+    state.unlocked.push(t.id);
     saveState(); updateStatsUI();
     if(el.musicModal.style.display!=='none') renderTracks();
-    toast(`🎉 Новый трек (${rareLabel(track.rarity)}): ${track.title}`);
+    toast(`🎉 Новый трек (${label(rare)}): ${t.title}`);
   }
-  function rareLabel(r){ return {common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный'}[r]||''; }
+  function label(r){ return {common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный'}[r]||''; }
 
+  // Timer
   function startTimer(){
     stopTimer();
-    const start = Date.now();
-    timerId = setInterval(()=>{
-      const s = Math.floor((Date.now()-start)/1000);
+    const start=Date.now();
+    timerId=setInterval(()=>{
+      const s=Math.floor((Date.now()-start)/1000);
       el.gameTime.textContent = `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
     }, 500);
   }
@@ -204,7 +194,7 @@
     if(player.index<0) player.index=0;
   }
   function playCurrent(){
-    const t = player.queue[player.index];
+    const t=player.queue[player.index];
     if(!t){ tg.showAlert('Очередь пуста'); return; }
     el.playerTitle.textContent = t.title;
     el.playerArtist.textContent = t.artist;
@@ -212,7 +202,6 @@
     setTimeout(bindAudio, 120);
     el.playerPlay.textContent='⏸️';
   }
-
   function bindAudio(){
     const a = window.__currentAudio; if(!a) return;
     a.onended = ()=> nextTrack();
@@ -223,23 +212,23 @@
     const a = window.__currentAudio;
     if(!a){ if(player.queue.length>0) playCurrent(); return; }
     if(a.paused){ a.play().then(()=> el.playerPlay.textContent='⏸️'); }
-    else         { a.pause();      el.playerPlay.textContent='▶️'; }
+    else{ a.pause(); el.playerPlay.textContent='▶️'; }
   }
   function nextTrack(){
     if(!player.queue.length) return;
-    player.index = (player.index+1)%player.queue.length; playCurrent();
+    player.index=(player.index+1)%player.queue.length; playCurrent();
   }
   function prevTrack(){
     if(!player.queue.length) return;
-    player.index = (player.index-1+player.queue.length)%player.queue.length; playCurrent();
+    player.index=(player.index-1+player.queue.length)%player.queue.length; playCurrent();
   }
-  function updateProgress(reset=false){
-    const a = window.__currentAudio; if(!a) return;
+  function updateProgress(){
+    const a=window.__currentAudio; if(!a) return;
     const cur=a.currentTime||0, dur=a.duration||0;
-    const pct = dur>0?(cur/dur)*100:0;
-    el.playerProgressFill.style.width = `${pct}%`;
-    el.playerTimeCur.textContent = fmt(cur);
-    el.playerTimeDur.textContent = isFinite(dur)? fmt(dur) : '0:00';
+    const pct=dur>0?(cur/dur)*100:0;
+    el.playerProgressFill.style.width=`${pct}%`;
+    el.playerTimeCur.textContent=fmt(cur);
+    el.playerTimeDur.textContent=isFinite(dur)?fmt(dur):'0:00';
   }
   function fmt(s){ const m=Math.floor(s/60), ss=Math.floor(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
   function startSeek(e){
@@ -248,14 +237,14 @@
   function moveSeek(e){ if(player.seeking) seekTo(e); }
   function endSeek(){ player.seeking=false; }
   function seekTo(e){
-    const a = window.__currentAudio; if(!a) return;
-    const r = el.playerProgress.getBoundingClientRect();
-    const x = (e.clientX ?? e.touches?.[0]?.clientX) - r.left;
-    const ratio = Math.max(0, Math.min(1, x/r.width));
-    const dur = a.duration||0; if(dur>0){ a.currentTime = dur*ratio; updateProgress(); }
+    const a=window.__currentAudio; if(!a) return;
+    const r=el.playerProgress.getBoundingClientRect();
+    const x=(e.clientX ?? e.touches?.[0]?.clientX)-r.left;
+    const ratio=Math.max(0,Math.min(1,x/r.width));
+    const dur=a.duration||0; if(dur>0){ a.currentTime=dur*ratio; updateProgress(); }
   }
 
-  // UI & State
+  // UI / State
   function updateStatsUI(){
     const total = Object.values(Music.albums).flatMap(a=>a.tracks).length;
     el.statScore.textContent = state.score;
@@ -263,7 +252,7 @@
     el.statLevel.textContent = Math.floor(state.score/200)+1;
   }
   function toast(msg){
-    const t = el.toast; t.textContent=msg; t.classList.remove('hidden');
+    const t=el.toast; t.textContent=msg; t.classList.remove('hidden');
     clearTimeout(t._tmr); t._tmr=setTimeout(()=> t.classList.add('hidden'), 2000);
   }
   function loadState(){
