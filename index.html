@@ -20,7 +20,7 @@
         <div class="stat-label">Очки</div>
       </div>
       <div class="stat">
-        <div class="stat-value" id="statTracks">0/10</div>
+        <div class="stat-value" id="statTracks">0/20</div>
         <div class="stat-label">Треки</div>
       </div>
       <div class="stat">
@@ -47,7 +47,9 @@
           <div><b>Счёт:</b> <span id="gameScore">0</span></div>
           <div><b>Время:</b> <span id="gameTime">0:00</span></div>
         </div>
-        <canvas id="gameCanvas" width="320" height="420"></canvas>
+        <div class="game-frame">
+          <canvas id="gameCanvas" width="320" height="420"></canvas>
+        </div>
         <div class="game-controls">
           <button id="btnRestart" class="btn">🔄 Заново</button>
           <button id="btnPause" class="btn">⏸️ Пауза</button>
@@ -65,15 +67,11 @@
       </div>
       <div class="modal-body">
         <div class="album-picker">
-          <input id="albumSearch" type="search" placeholder="Найти альбом..." list="albumsData" />
+          <input id="albumSearch" type="search" placeholder="Найти альбом (Karmageddon / Психи...)" list="albumsData" />
           <datalist id="albumsData">
-            <option value="Альбом 1"></option>
-            <option value="Альбом 2"></option>
+            <option value="Karmageddon"></option>
+            <option value="Психи попадают в топ"></option>
           </datalist>
-          <div class="album-list" id="albumList">
-            <button class="album-item active" data-album="album1">Альбом 1</button>
-            <button class="album-item" data-album="album2">Альбом 2</button>
-          </div>
         </div>
 
         <div id="tracksList"></div>
