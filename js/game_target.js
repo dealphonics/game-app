@@ -18,6 +18,7 @@ window.GameTarget = function(canvas, onScore){
         targets.splice(i,1);
         score += 10;
         onScore(score);
+        tg.HapticFeedback.impactOccurred('light');
         break;
       }
     }
