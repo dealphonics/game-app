@@ -1,37 +1,49 @@
 window.Music = (function(){
-  // стабильные демо-треки
-  const demoMap = {
-    t1: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
-    t2: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    t3: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    t4: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    t5: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-    t6: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-    t7: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-    t8: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-    t9: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-    t10:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'
-  };
+  // Настройте при необходимости (если файлы в другом каталоге)
+  const baseRepo = 'dealphonics/game-app';
+  const basePaths = [
+    (rel)=>`https://raw.githubusercontent.com/${baseRepo}/main/${rel}`,
+    (rel)=>`https://dealphonics.github.io/game-app/${rel}`,
+    (rel)=>`https://raw.githubusercontent.com/${baseRepo}/master/${rel}`
+  ];
 
+  // Два альбома c реальными названиями и относительными путями к mp3
   const albums = {
-    album1: [
-      {id:'t1', title:'Cosmic Journey', artist:'Space Beats'},
-      {id:'t2', title:'Stellar Dreams', artist:'Nebula Sound'},
-      {id:'t3', title:'Galaxy Pulse', artist:'Astro Vibes'},
-      {id:'t4', title:'Quantum Rhythm', artist:'Orbit Lab'},
-      {id:'t5', title:'Nebula Echo', artist:'Void Collective'}
-    ],
-    album2: [
-      {id:'t6', title:'Aurora Drift', artist:'Northern Lights'},
-      {id:'t7', title:'Lunar Bloom', artist:'Moon Unit'},
-      {id:'t8', title:'Solar Wind', artist:'Helios'},
-      {id:'t9', title:'Comet Trail', artist:'Iceshard'},
-      {id:'t10', title:'Event Horizon', artist:'Singularity'}
-    ]
+    karmageddon: {
+      title:'Karmageddon', artist:'Kizaru',
+      tracks: [
+        {id:'k_dezhavu', title:'Дежавю', artist:'Kizaru', path:'karmageddon/dezhavu.mp3'},
+        {id:'k_top_dog', title:'Top Dog', artist:'Kizaru', path:'karmageddon/top_dog.mp3'},
+        {id:'k_vodopad', title:'Водопад', artist:'Kizaru', path:'karmageddon/vodopad.mp3'},
+        {id:'k_derzhu_raion', title:'Держу район', artist:'Kizaru', path:'karmageddon/derzhu_raion.mp3'},
+        {id:'k_money_long', title:'MONEY LONG', artist:'Kizaru', path:'karmageddon/money_long.mp3'},
+        {id:'k_deep_end', title:'Deep End', artist:'Kizaru', path:'karmageddon/deep_end.mp3'},
+        {id:'k_smooth_operator', title:'Smooth operator', artist:'Kizaru', path:'karmageddon/smooth_operator.mp3'},
+        {id:'k_psihopat_lunatik', title:'Психопат-лунатик', artist:'Kizaru', path:'karmageddon/psihopat_lunatik.mp3'},
+        {id:'k_sim_salabim', title:'Сим салабим', artist:'Kizaru', path:'karmageddon/sim_salabim.mp3'},
+        {id:'k_vse_chto_ugodno', title:'Все что угодно', artist:'Kizaru', path:'karmageddon/vse_chto_ugodno.mp3'}
+      ]
+    },
+    psychi: {
+      title:'Психи попадают в топ', artist:'Макс Корж',
+      tracks: [
+        {id:'p_snadobye', title:'Снадобье', artist:'Макс Корж', path:'psychi/snadobye.mp3'},
+        {id:'p_afgan', title:'Афган', artist:'Макс Корж', path:'psychi/afgan.mp3'},
+        {id:'p_sozhzheny', title:'Сожжены', artist:'Макс Корж', path:'psychi/sozhzheny.mp3'},
+        {id:'p_luchshiy_vaib', title:'Лучший вайб', artist:'Макс Корж', path:'psychi/luchshiy_vaib.mp3'},
+        {id:'p_young_haze', title:'Young haze', artist:'Макс Корж', path:'psychi/young_haze.mp3'},
+        {id:'p_ulitsy_bez_fonarey', title:'Улицы без фонарей', artist:'Макс Корж', path:'psychi/ulitsy_bez_fonarey.mp3'},
+        {id:'p_tak_i_znal', title:'Так и знал', artist:'Макс Корж', path:'psychi/tak_i_znal.mp3'},
+        {id:'p_na_domu', title:'На дому', artist:'Макс Корж', path:'psychi/na_domu.mp3'},
+        {id:'p_animals', title:'Animals', artist:'Макс Корж', path:'psychi/animals.mp3'},
+        {id:'p_zapravka', title:'Заправка', artist:'Макс Корж', path:'psychi/zapravka.mp3'}
+      ]
+    }
   };
 
-  function renderTracks(targetEl, albumId, unlocked, onPlay){
-    const list = albums[albumId] || [];
+  function renderTracks(targetEl, albumKey, unlocked, onPlay){
+    const album = albums[albumKey] || albums.karmageddon;
+    const list = album.tracks;
     targetEl.innerHTML = '';
     list.forEach(track=>{
       const isUnlocked = unlocked.includes(track.id);
@@ -40,47 +52,50 @@ window.Music = (function(){
       row.innerHTML = `
         <div class="info">
           <div class="title">${isUnlocked?'🎵':'🔒'} ${track.title}</div>
-          <div class="artist">${track.artist}</div>
+          <div class="artist">${track.artist} · ${album.title}</div>
         </div>
         <button class="play" ${isUnlocked?'':'disabled'}>▶️</button>`;
-      row.querySelector('.play')?.addEventListener('click', ()=> onPlay(track));
+      row.querySelector('.play')?.addEventListener('click', ()=> onPlay(track, albumKey));
       targetEl.appendChild(row);
     });
   }
 
-  function playAudio(track){
+  async function playAudio(track){
     try{ window.__currentAudio?.pause(); }catch(e){}
     window.__currentAudio = null;
 
-    const url = demoMap[track.id];
-    if(url){
-      const audio = new Audio();
-      audio.src = url;
-      audio.preload = 'auto';
-      audio.crossOrigin = 'anonymous';
-      audio.volume = 0.85;
-      audio.play().then(()=>{
+    // Пробуем цепочку URL (raw main → pages → raw master)
+    const candidates = basePaths.map(f => f(track.path));
+
+    for (let i=0;i<candidates.length;i++){
+      const url = candidates[i];
+      try{
+        const audio = new Audio();
+        audio.src = url;
+        audio.preload = 'auto';
+        audio.crossOrigin = 'anonymous';
+        audio.volume = 0.9;
+        await audio.play();
         window.__currentAudio = audio;
-      }).catch(()=>{
-        tg.showAlert('Аудио заблокировано автоплеем: нажмите ещё раз по ▶️');
-      });
-      audio.onended = ()=> window.__currentAudio = null;
-      audio.onerror = ()=> tg.showAlert('Не удалось загрузить аудио. Попробуйте другой трек.');
-      return;
+        audio.onended = ()=> window.__currentAudio = null;
+        audio.onerror = ()=> {/* попробуем следующий */};
+        return; // успех
+      }catch(e){
+        // пробуем следующий источник
+      }
     }
 
-    // Фолбэк beep
+    // Фолбэк: beep и предупреждение
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
       const ctx = new AC();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.value = 440; gain.gain.value = 0.2;
-      osc.start(); setTimeout(()=>{ osc.stop(); ctx.close(); }, 600);
-    }catch(e){
-      tg.showAlert('Звук не воспроизводится. Добавим аудио позже.');
-    }
+      osc.frequency.value = 520; gain.gain.value = 0.15;
+      osc.start(); setTimeout(()=>{ osc.stop(); ctx.close(); }, 500);
+    }catch(e){}
+    tg.showAlert('Не удалось воспроизвести трек с GitHub. Проверьте пути/ветку или включите GitHub Pages.\nФайл: '+track.path);
   }
 
   return { albums, renderTracks, playAudio };
