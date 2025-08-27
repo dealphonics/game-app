@@ -45,13 +45,12 @@ body{
   padding:12px;flex:1 1 auto;min-height:0;overflow-y:auto; /* скролл внутри модалки */
 }
 
-/* Важно: поднимаем игровое окно над плеером — жёсткий нижний padding */
-#gameModal .modal-body{
-  padding: 12px 12px 220px 12px !important; /* override любых ранних правил */
-}
+/* Важно: гарантированный зазор снизу у окна игры, чтобы не перекрывал плеер */
+#gameModal .modal-body{ padding: 12px 12px 220px 12px !important; }
 
 /* Game */
 .game-frame{
+  position:relative;
   border:1px solid var(--border);
   border-radius:12px;
   padding:10px;background:#0b0b0f;
@@ -60,8 +59,22 @@ body{
   display:block;margin:0 auto;border:1px solid #000;border-radius:6px;background:#000;max-width:100%;touch-action:none;
 }
 .game-info{display:flex;gap:12px;justify-content:center;margin:8px 0;color:var(--muted)}
-.game-controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0}
-.game-hint{margin-top:6px;text-align:center;color:#aab}
+.game-hint{margin-top:8px;text-align:center;color:#aab}
+
+/* Game over overlay */
+.gameover-overlay{
+  position:absolute; inset:0; z-index:10;
+  background:rgba(0,0,0,0.65);
+  display:flex; align-items:center; justify-content:center;
+}
+.gameover-panel{
+  background:linear-gradient(135deg,#1e2233,#15192b);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px; width:90%; max-width:280px; text-align:center;
+}
+.go-title{font-weight:800; font-size:18px; margin-bottom:8px}
+.go-score,.go-best{color:#cfd3e1; margin:4px 0}
 
 /* Music */
 .album-picker{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
@@ -83,7 +96,7 @@ body{
 .track.locked{opacity:.55}
 .track .info{font-size:13px}
 .track .title{font-weight:800}
-.track .artist{color:var(--muted);font-size:12px}
+.track .artist{color:#c9c9d6;font-size:12px}
 .track .play{background:var(--panel);border:1px solid var(--border);border-radius:10px;color:#fff;font-weight:700;padding:8px 12px;cursor:pointer}
 
 /* Toast */
