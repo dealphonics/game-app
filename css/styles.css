@@ -7,7 +7,7 @@
 body{
   margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
   background:linear-gradient(135deg,#0f0f23,#1a1a2e);color:var(--txt);
-  padding-bottom:80px; /* чтобы плеер не перекрывал контент */
+  padding-bottom:96px; /* запас под плеер */
 }
 .container{max-width:420px;margin:0 auto;padding:16px}
 .header{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center}
@@ -29,7 +29,7 @@ body{
 .modal-content{
   background:var(--panel);border:1px solid var(--border);border-radius:16px;
   max-width:420px;width:100%;overflow:hidden;
-  display:flex;flex-direction:column;max-height:85vh; /* фикс высота */
+  display:flex;flex-direction:column;max-height:85vh; /* фикс высота окна */
 }
 .modal-content.solid{background:var(--panel-solid);}
 .modal-header{
@@ -39,8 +39,7 @@ body{
 .modal-title{font-weight:800}
 .modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:10px;cursor:pointer;width:32px;height:32px}
 .modal-body{
-  padding:12px;flex:1 1 auto;min-height:0; /* важно для скролла */
-  overflow-y:auto; /* внутренний скролл при большом числе треков */
+  padding:12px;flex:1 1 auto;min-height:0;overflow-y:auto; /* внутренний скролл */
 }
 
 /* Game */
@@ -57,17 +56,26 @@ body{
   border-radius:6px;
   background:#000;
   max-width:100%;
+  touch-action:none; /* лучшее управление на тач */
 }
 .game-info{display:flex;gap:12px;justify-content:center;margin:8px 0;color:var(--muted)}
 .game-controls{display:flex;gap:10px;justify-content:center;margin:8px 0}
 
 /* Music */
-.album-picker{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.album-picker{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
 #albumSearch{
   width:100%;padding:10px 12px;border-radius:10px;
   border:1px solid var(--border);background:#0e1322;color:#fff;outline:none
 }
 #albumSearch::placeholder{color:#889}
+.search-results{
+  background:#0e1322;border:1px solid var(--border);border-radius:10px;overflow:hidden
+}
+.search-results .row{
+  padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer
+}
+.search-results .row:last-child{border-bottom:none}
+.search-results .row:hover{background:#121831;color:#fff}
 
 .track{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px}
 .track.locked{opacity:.55}
@@ -78,7 +86,7 @@ body{
 
 /* Toast */
 .toast{
-  position:fixed;right:12px;bottom:90px; /* подняли над плеером */
+  position:fixed;right:12px;bottom:108px; /* над плеером */
   background:linear-gradient(45deg,#4ecdc4,#44a08d);padding:10px 14px;border-radius:12px;
   box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:1300
 }
@@ -91,9 +99,18 @@ body{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:10px 12px;
 }
-.player-meta{min-width:0} /* truncate */
+.player-meta{min-width:0;flex:1}
 .player-title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
 .player-artist{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
+.player-progress{
+  margin-top:6px;height:6px;background:#0e1322;border:1px solid var(--border);border-radius:6px;position:relative;cursor:pointer
+}
+.player-progress-fill{
+  position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:6px
+}
+.player-time{
+  display:flex;justify-content:space-between;gap:10px;margin-top:4px;font-size:11px;color:#cbd
+}
 .player-controls{display:flex;gap:8px}
 .pbtn{
   background:var(--panel);border:1px solid var(--border);border-radius:10px;color:#fff;
