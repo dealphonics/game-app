@@ -1,28 +1,32 @@
-// Doodle Jump • premium (tilt, shooting, mobs, platforms, powerups, cosmic BG)
+// Doodle Jump • premium (fixed meters, tilt auto, smooth camera, better shooting)
 window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
   // State
   let running=false, paused=false, raf=0;
-  let camY=0, maxMeters=0, gravity=0.35;
+  let camY=0, prevMeters=0;
+  let baseY=0, minY=0; // для корректной высоты независимо от камеры
 
   // Player
   const player = {
     x: W/2, y: H-100, w: 26, h: 34,
     vx: 0, vy: 0, baseSpeed: 3.2, jump: -9.8,
-    dir: 1, invul:0, // frames of invulnerability
+    dir: 1, invul:0, // frames after hit
     shield: 0, jetpack: 0, boots: 0, shotCooldown: 0
   };
 
+  // World arrays
   let plats=[], mobs=[], bullets=[], particles=[], pickups=[];
+
+  // Input
   let tiltEnabled=false, tiltX=0, pointerShoot=false;
 
-  // Parallax stars
+  // Stars parallax
   const starsA = spawnStars(35), starsB=spawnStars(25), starsC=spawnStars(15);
   function spawnStars(n){ return Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+0.5})) }
 
-  // Enable tilt automatically (called upon start — inside user gesture)
+  // Enable tilt immediately (called inside user gesture on startGame)
   function enableTilt(){
     if(tiltEnabled) return;
     if(typeof DeviceOrientationEvent !== 'undefined' &&
@@ -38,22 +42,22 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
   function onTilt(e){
     if(e && typeof e.gamma==='number'){
-      // gamma: -90..90; повышаем чувствительность
-      const g = Math.max(-25, Math.min(25, e.gamma));
-      tiltX = g/12; // -~2..2
+      // гамма: -90..90, чувствительность средняя
+      const g = Math.max(-22, Math.min(22, e.gamma));
+      tiltX = g / 14; // сглаженная средняя чувствительность
     }
   }
 
-  // Shooting by tap
-  canvas.addEventListener('pointerdown', ()=>{ pointerShoot=true; }, {passive:true});
+  // Shooting by tap (instant)
+  canvas.addEventListener('pointerdown', ()=>{ pointerShoot=true; shoot(); }, {passive:true});
   canvas.addEventListener('pointerup',   ()=>{ pointerShoot=false; }, {passive:true});
-  canvas.addEventListener('touchstart', ()=>{ pointerShoot=true; }, {passive:true});
+  canvas.addEventListener('touchstart', ()=>{ pointerShoot=true; shoot(); }, {passive:true});
   canvas.addEventListener('touchend',   ()=>{ pointerShoot=false; }, {passive:true});
 
   // Keyboard fallback
   window.addEventListener('keydown', e=>{
-    if(e.key==='ArrowLeft'||e.key==='a') player.vx=-player.baseSpeed*2.2;
-    if(e.key==='ArrowRight'||e.key==='d') player.vx= player.baseSpeed*2.2;
+    if(e.key==='ArrowLeft'||e.key==='a') player.vx=-player.baseSpeed*2.0;
+    if(e.key==='ArrowRight'||e.key==='d') player.vx= player.baseSpeed*2.0;
     if(e.key===' ') shoot();
   });
   window.addEventListener('keyup', e=>{
@@ -61,9 +65,13 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   });
 
   function reset(){
-    camY=0; maxMeters=0;
+    camY=0; prevMeters=0;
     player.x=W/2; player.y=H-100; player.vx=0; player.vy=0;
     player.shield=0; player.jetpack=0; player.boots=0; player.shotCooldown=0; player.invul=0;
+
+    baseY = player.y; // стартовая точка для высоты
+    minY = player.y;
+
     plats=[]; mobs=[]; bullets=[]; particles=[]; pickups=[];
 
     plats.push({x: W/2-45, y: H-20, w: 90, h: 12, type:'solid', vx:0, life:Infinity});
@@ -71,29 +79,26 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   function makePlat(y){
-    const w=60, h=10;
-    const r=Math.random();
+    const w=60, h=10, r=Math.random();
     if(r<0.15) return {x:rand(0,W-w), y, w, h, type:'move', vx:randSign()*rand(0.5,1.0), life:Infinity};
     if(r<0.30) return {x:rand(0,W-w), y, w, h, type:'disappear', vx:0, life:2};
     if(r<0.40) return {x:rand(0,W-w), y, w, h, type:'crumble', vx:0, life:1};
     return {x:rand(0,W-w), y, w, h, type:'solid', vx:0, life:Infinity};
   }
-
   function spawnMob(y){
     const t = Math.random();
     if(t<0.5) mobs.push({x:rand(10,W-30), y, w:24, h:20, type:'walker', vx:randSign()*rand(0.6,1.2), vy:0, alive:true});
-    else      mobs.push({x:rand(10,W-30), y, w:20, h:18, type:'flyer', vx:randSign()*rand(0.5,1.0), vy:rand(-0.35,0.35), alive:true, ph:Math.random()*6.28});
+    else      mobs.push({x:rand(10,W-30), y, w:20, h:18, type:'flyer',  vx:randSign()*rand(0.5,1.0), vy:rand(-0.35,0.35), alive:true, ph:Math.random()*6.28});
   }
   function spawnPickup(y){
     const r=Math.random();
-    if(r<0.05) pickups.push({x:rand(10,W-20), y, w:18,h:18, type:'boots'});
+    if(r<0.05)      pickups.push({x:rand(10,W-20), y, w:18,h:18, type:'boots'});
     else if(r<0.08) pickups.push({x:rand(10,W-20), y, w:18,h:18, type:'jetpack'});
     else if(r<0.11) pickups.push({x:rand(10,W-20), y, w:18,h:18, type:'shield'});
   }
-
   function shoot(){
     if(player.shotCooldown>0) return;
-    bullets.push({x:player.x+player.w/2-2, y:player.y, vx:0, vy:-8.2, r:3});
+    bullets.push({x:player.x+player.w/2-2, y:player.y, vy:-8.2, r:3});
     player.shotCooldown=10;
     tg.HapticFeedback.impactOccurred('light');
   }
@@ -102,24 +107,24 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function randSign(){ return Math.random()<0.5?-1:1; }
 
   function update(){
-    // Input from tilt (more sensitive)
+    // Tilt control (mid-sensitivity, smoothed)
     if(tiltEnabled){
-      const target = tiltX * player.baseSpeed * 3.2;
-      player.vx += (target - player.vx)*0.5; // сглаженно, но реактивно
-      if(Math.abs(player.vx)<0.05) player.vx=0;
+      const target = tiltX * player.baseSpeed * 2.4;
+      player.vx += (target - player.vx)*0.35;
+      if(Math.abs(player.vx)<0.06) player.vx=0;
     }
     if(pointerShoot) shoot();
     if(player.shotCooldown>0) player.shotCooldown--;
     if(player.invul>0) player.invul--;
 
-    // Physics
+    // Physics with jetpack
     if(player.jetpack>0){
       player.vy += 0.15;
       player.vy = Math.min(player.vy, -4.2);
       player.jetpack--;
       particles.push({x:player.x+player.w/2+rand(-3,3), y:player.y+player.h, life:12, color:'#fa5'});
     }else{
-      player.vy += gravity;
+      player.vy += 0.35;
     }
     player.x += player.vx;
     player.y += player.vy;
@@ -128,6 +133,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     if(player.x<-player.w) player.x=W;
     if(player.x>W) player.x=-player.w;
 
+    // Move platforms
     plats.forEach(p=>{
       if(p.type==='move'){
         p.x += p.vx;
@@ -135,7 +141,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
     });
 
-    // Landing (only falling)
+    // Landing on platforms
     if(player.vy>0){
       for(const p of plats){
         if(player.x+player.w>p.x && player.x<p.x+p.w &&
@@ -147,7 +153,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
           if(p.type==='crumble' || p.type==='disappear'){
             p.life--; if(p.life<=0) p.y=-9999;
           }
-          // Событие дропа (низкий шанс) — решает внешний onAttemptDrop
           if(Math.random()<0.02 && typeof onAttemptDrop==='function') onAttemptDrop('landing');
           break;
         }
@@ -187,16 +192,15 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
             particles.push({x:player.x+player.w/2,y:player.y,life:18,color:'#4ef'});
             tg.HapticFeedback.impactOccurred('light');
           }else{
-            // death
-            running=false;
+            running=false; // game over
           }
         }
       }
     });
 
-    // Bullets
+    // Bullets (remove when above camera)
     bullets.forEach(b=>{ b.y += b.vy; });
-    bullets = bullets.filter(b=> b.y>-20);
+    bullets = bullets.filter(b=> b.y > camY - 40);
 
     // Pickups
     pickups.forEach(f=>{
@@ -211,13 +215,14 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
     });
 
-    // Camera (robust): поднимаем, когда игрок выше 45% экрана
-    const desired = (player.y < camY + H*0.45) ? player.y - H*0.6 : camY;
-    if(desired < camY) camY += (desired - camY)*0.25;
+    // Camera — мягкая без дрожи (вверх только)
+    const desired = player.y - H*0.55;
+    if(desired < camY){
+      camY += (desired - camY)*0.12; // сглаженно
+    }
 
     // Generate upwards
-    const topY = camY;
-    while(plats.length && plats[plats.length-1].y > topY - 40){
+    while(plats.length && plats[plats.length-1].y > camY - 40){
       const yTop = plats[plats.length-1].y - rand(56,64);
       plats.push(makePlat(yTop));
       if(Math.random()<0.22) spawnPickup(yTop-40);
@@ -225,16 +230,17 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       if(plats.length>54) plats.splice(0,1);
     }
 
-    // Score (meters)
-    const meters = Math.max(0, ((H - (player.y - camY)) / 10) | 0);
-    if(meters>maxMeters){ maxMeters=meters; onScore?.(maxMeters); }
+    // Meters: считаем от стартовой точки игрока (без зависимости от камеры)
+    if(player.y < minY) minY = player.y;
+    const meters = Math.max(0, Math.floor((baseY - minY)/10));
+    if(meters !== prevMeters){ prevMeters = meters; onScore?.(meters); }
 
     // Death by fall
     if(player.y - camY > H+72) running=false;
 
-    // Decrease timers
+    // Timers
     if(player.boots>0) player.boots--;
-    // player.shield persists until hit
+    if(player.invul>0) player.invul--;
   }
 
   function updateParticles(){
@@ -243,8 +249,8 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   function draw(){
-    // Cosmic BG by height
-    const hue = (220 + (maxMeters/4)) % 360;
+    // Cosmic BG by meters
+    const hue = (220 + (prevMeters/4)) % 360;
     const g = ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0, `hsl(${hue},30%,10%)`);
     g.addColorStop(1, `hsl(${(hue+40)%360},35%,15%)`);
@@ -254,8 +260,9 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     function drawStars(arr, par){
       ctx.fillStyle='#fff';
       arr.forEach(s=>{
-        const y = (s.y + camY*par) % H;
-        ctx.globalAlpha = 0.4 + Math.random()*0.2;
+        let y = (s.y + camY*par) % H;
+        if(y<0) y += H;
+        ctx.globalAlpha = 0.5;
         ctx.fillRect(s.x, y, s.r, s.r);
       }); ctx.globalAlpha=1;
     }
@@ -325,11 +332,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   function loop(){
-    if(!running){
-      // сообщаем об окончании
-      onGameOver?.(maxMeters);
-      return;
-    }
+    if(!running){ onGameOver?.(prevMeters); return; }
     if(!paused){ update(); updateParticles(); draw(); }
     raf = requestAnimationFrame(loop);
   }
@@ -341,6 +344,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     start, stop,
     pause: ()=>{ paused=true; },
     resume: ()=>{ paused=false; },
-    enableTilt: enableTilt
+    enableTilt // на всякий случай
   };
 };
