@@ -1,5 +1,5 @@
 (function(){
-  const SKEY = 'sk_state_v5';
+  const SKEY = 'sk_state_v6';
   const state = loadState();
 
   const el = {
@@ -15,12 +15,11 @@
     gameCanvas: document.getElementById('gameCanvas'),
     btnRestart: document.getElementById('btnRestart'),
     btnPause: document.getElementById('btnPause'),
-    btnTilt: document.getElementById('btnTilt'),
     tracksList: document.getElementById('tracksList'),
     toast: document.getElementById('toast'),
     albumSearch: document.getElementById('albumSearch'),
     searchResults: document.getElementById('searchResults'),
-    // Player bar
+    // Player
     playerPrev: document.getElementById('playerPrev'),
     playerPlay: document.getElementById('playerPlay'),
     playerNext: document.getElementById('playerNext'),
@@ -37,25 +36,22 @@
 
   const player={ queue:[], index:-1, seeking:false };
 
-  // Modal helpers
-  function showModal(id){ const m=document.getElementById(id); if(m){ m.style.display='flex'; } }
+  // Modal
+  function showModal(id){ const m=document.getElementById(id); if(m) m.style.display='flex'; }
   function hideModal(id){
-    const m=document.getElementById(id);
-    if(!m) return;
+    const m=document.getElementById(id); if(!m) return;
     m.style.display='none';
-    if(id==='gameModal'){ stopGame(); }
+    if(id==='gameModal') stopGame();
   }
-
   document.querySelectorAll('.modal-close').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const targetId = btn.getAttribute('data-close') || btn.closest('.modal')?.id;
-      if(targetId) hideModal(targetId);
+      const id=btn.getAttribute('data-close')||btn.closest('.modal')?.id; if(id) hideModal(id);
     });
   });
   [el.gameModal, el.musicModal].forEach(mod=>{
     mod.addEventListener('click', (e)=>{ if(e.target===mod) hideModal(mod.id); });
   });
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ hideModal('gameModal'); hideModal('musicModal'); } });
+  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ hideModal('gameModal'); hideModal('musicModal'); } });
 
   // Actions
   el.btnPlay.addEventListener('click', ()=>{ showModal('gameModal'); startGame(); });
@@ -64,9 +60,8 @@
   el.btnPause.addEventListener('click', ()=>{
     if(!doodle) return;
     if(el.btnPause.dataset.paused==='1'){ doodle.resume(); el.btnPause.textContent='⏸️ Пауза'; el.btnPause.dataset.paused='0'; }
-    else{ doodle.pause(); el.btnPause.textContent='▶️ Продолжить'; el.btnPause.dataset.paused='1'; }
+    else { doodle.pause(); el.btnPause.textContent='▶️ Продолжить'; el.btnPause.dataset.paused='1'; }
   });
-  el.btnTilt.addEventListener('click', ()=> doodle?.enableTilt?.());
 
   // Player controls
   el.playerPrev.addEventListener('click', ()=> prevTrack());
@@ -76,10 +71,9 @@
   window.addEventListener('pointermove', e=> moveSeek(e));
   window.addEventListener('pointerup', ()=> endSeek());
 
-  // Search input
+  // Search
   el.albumSearch.addEventListener('input', ()=>{
     const q = el.albumSearch.value.trim().toLowerCase();
-    // альбом
     const map = [
       {key:'karmageddon', album:'karmageddon'},
       {key:'кармагеддон', album:'karmageddon'},
@@ -88,44 +82,46 @@
       {key:'макс корж', album:'psychi'},
       {key:'psychi', album:'psychi'}
     ];
-    const found = map.find(m=> q && m.key.includes(q));
-    if(found){ currentAlbum=found.album; renderTracks(); el.searchResults.style.display='none'; return; }
+    const match = map.find(m=> q && m.key.includes(q));
+    if(match){ currentAlbum=match.album; renderTracks(); el.searchResults.style.display='none'; return; }
 
-    // треки
     if(q.length>=2){
       const res = Music.searchTracks(q);
       if(res.length){
         el.searchResults.innerHTML = res.map(t=>`<div class="row" data-id="${t.id}">${t.title} — ${t.artist}</div>`).join('');
         el.searchResults.style.display='block';
-      }else el.searchResults.style.display='none';
-    }else el.searchResults.style.display='none';
+      } else el.searchResults.style.display='none';
+    } else el.searchResults.style.display='none';
   });
-
   el.searchResults.addEventListener('click', (e)=>{
-    const row = e.target.closest('.row');
-    if(!row) return;
+    const row = e.target.closest('.row'); if(!row) return;
     const id = row.getAttribute('data-id');
     const all = Object.values(Music.albums).flatMap(a=>a.tracks);
     const track = all.find(t=>t.id===id);
     if(!track){ el.searchResults.style.display='none'; return; }
     if(!player.queue.some(t=>t.id===track.id)) player.queue.push(track);
     if(player.index<0) player.index = player.queue.findIndex(t=>t.id===track.id);
-    playCurrent();
-    el.searchResults.style.display='none';
+    playCurrent(); el.searchResults.style.display='none';
   });
 
   // Init
   updateStatsUI(); renderTracks(); bindAudio();
 
-  // Game
+  // Game start with tilt enabled automatically
   function startGame(){
     stopGame();
     el.gameScore.textContent='0'; el.gameTime.textContent='0:00';
     doodle = window.Doodle(
       el.gameCanvas,
       meters => { el.gameScore.textContent = meters; },
-      () => { unlockInstant(); }
+      (evType)=> { attemptDrop(evType); },                  // низкие шансы, редкость учитывается в unlockByRarity
+      ()=> { // onGameOver
+        stopGame();                                         // начисление, финальный шанс уже внутри stopGame
+        toast('Игра окончена! Нажмите Заново, чтобы играть ещё.');
+      }
     );
+    // Включить наклон сразу (под пользовательский клик “Играть”)
+    doodle.enableTilt?.();
     doodle.start();
     el.btnPause.textContent='⏸️ Пауза'; el.btnPause.dataset.paused='0';
     startTimer();
@@ -136,11 +132,51 @@
     const gained = parseInt(el.gameScore.textContent||'0',10)||0;
     if(gained>0){
       state.score += gained;
-      if(Math.random()<0.25) unlockRandom();
+      // Финальный шанс: 8%
+      if(Math.random()<0.08) unlockByRarity();
       saveState(); updateStatsUI();
-      toast(`Игра окончена! +${gained} очков`);
     }
   }
+
+  // Drop logic with rarity
+  // Редкость: common 70%, rare 20%, epic 8%, legendary 2% (внутри — выбор из доступных)
+  const rarityWeights = { common:70, rare:20, epic:8, legendary:2 };
+  function attemptDrop(evType){
+    // Событийные вероятности
+    const p = evType==='kill' ? 0.03 : 0.02; // убийство моба/приземление
+    if(Math.random() < p) unlockByRarity();
+  }
+  function unlockByRarity(){
+    // Собираем оставшиеся треки с редкостями
+    const all = Object.values(Music.albums).flatMap(a=>a.tracks);
+    const locked = all.filter(t=>!state.unlocked.includes(t.id));
+    if(!locked.length) return;
+
+    // Группируем по редкостям
+    const byR = { common:[], rare:[], epic:[], legendary:[] };
+    locked.forEach(t=> { if(byR[t.rarity]) byR[t.rarity].push(t); });
+
+    // Взвешенный выбор редкости
+    const totalW = Object.keys(rarityWeights).reduce((s,k)=> s + (byR[k].length? rarityWeights[k]:0),0);
+    if(totalW===0) return;
+
+    let r = Math.random()*totalW, chosenR='common';
+    for(const key of ['common','rare','epic','legendary']){
+      const w = byR[key].length ? rarityWeights[key] : 0;
+      if(r < w){ chosenR = key; break; } r -= w;
+    }
+    // Случайный трек этой редкости
+    const pool = byR[chosenR];
+    if(!pool || !pool.length) return;
+    const track = pool[Math.floor(Math.random()*pool.length)];
+
+    state.unlocked.push(track.id);
+    saveState(); updateStatsUI();
+    if(el.musicModal.style.display!=='none') renderTracks();
+    toast(`🎉 Новый трек (${rareLabel(track.rarity)}): ${track.title}`);
+  }
+  function rareLabel(r){ return {common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный'}[r]||''; }
+
   function startTimer(){
     stopTimer();
     const start = Date.now();
@@ -154,15 +190,14 @@
   // Music & player
   function renderTracks(){
     Music.renderTracks(el.tracksList, currentAlbum, state.unlocked, (track)=>{
-      const curUnlockedAlbum = (Music.albums[currentAlbum]?.tracks||[]).filter(t=>state.unlocked.includes(t.id));
+      const curAlbumUnlocked = (Music.albums[currentAlbum]?.tracks||[]).filter(t=>state.unlocked.includes(t.id));
       const allUnlocked = Object.values(Music.albums).flatMap(a=>a.tracks).filter(t=>state.unlocked.includes(t.id));
-      const q = curUnlockedAlbum.length?curUnlockedAlbum:allUnlocked;
-      if(!q.length){ tg.showAlert('Нет разблокированных треков. Откройте треки в игре.'); return; }
-      setQueue(q, track); playCurrent();
+      const queue = curAlbumUnlocked.length? curAlbumUnlocked : allUnlocked;
+      if(!queue.length){ tg.showAlert('Нет разблокированных треков. Откройте треки в игре.'); return; }
+      setQueue(queue, track); playCurrent();
     });
     updateStatsUI();
   }
-
   function setQueue(queue, cur){
     player.queue = queue.slice();
     player.index = player.queue.findIndex(t=>t.id===cur.id);
@@ -177,21 +212,18 @@
     setTimeout(bindAudio, 120);
     el.playerPlay.textContent='⏸️';
   }
+
   function bindAudio(){
-    const a = window.__currentAudio;
-    if(!a) return;
+    const a = window.__currentAudio; if(!a) return;
     a.onended = ()=> nextTrack();
     a.ontimeupdate = ()=> updateProgress();
     a.onloadedmetadata = ()=> updateProgress(true);
   }
   function togglePlayPause(){
     const a = window.__currentAudio;
-    if(!a){
-      if(player.queue.length>0) playCurrent();
-      return;
-    }
+    if(!a){ if(player.queue.length>0) playCurrent(); return; }
     if(a.paused){ a.play().then(()=> el.playerPlay.textContent='⏸️'); }
-    else{ a.pause(); el.playerPlay.textContent='▶️'; }
+    else         { a.pause();      el.playerPlay.textContent='▶️'; }
   }
   function nextTrack(){
     if(!player.queue.length) return;
@@ -203,8 +235,8 @@
   }
   function updateProgress(reset=false){
     const a = window.__currentAudio; if(!a) return;
-    const cur = a.currentTime||0, dur=a.duration||0;
-    const pct = dur>0 ? (cur/dur)*100 : 0;
+    const cur=a.currentTime||0, dur=a.duration||0;
+    const pct = dur>0?(cur/dur)*100:0;
     el.playerProgressFill.style.width = `${pct}%`;
     el.playerTimeCur.textContent = fmt(cur);
     el.playerTimeDur.textContent = isFinite(dur)? fmt(dur) : '0:00';
@@ -216,28 +248,16 @@
   function moveSeek(e){ if(player.seeking) seekTo(e); }
   function endSeek(){ player.seeking=false; }
   function seekTo(e){
-    const a=window.__currentAudio; if(!a) return;
+    const a = window.__currentAudio; if(!a) return;
     const r = el.playerProgress.getBoundingClientRect();
     const x = (e.clientX ?? e.touches?.[0]?.clientX) - r.left;
     const ratio = Math.max(0, Math.min(1, x/r.width));
-    const dur = a.duration||0;
-    if(dur>0){ a.currentTime = dur*ratio; updateProgress(); }
+    const dur = a.duration||0; if(dur>0){ a.currentTime = dur*ratio; updateProgress(); }
   }
 
-  // Unlock
-  function allTracks(){ return Object.values(Music.albums).flatMap(a=>a.tracks); }
-  function pickLocked(){ const locked=allTracks().filter(t=>!state.unlocked.includes(t.id)); return locked.length? locked[Math.floor(Math.random()*locked.length)] : null; }
-  function unlockInstant(){
-    const t = pickLocked(); if(!t) return;
-    state.unlocked.push(t.id); saveState(); updateStatsUI();
-    if(el.musicModal.style.display!=='none') renderTracks();
-    toast(`🎉 Новый трек: ${t.title}`);
-  }
-  function unlockRandom(){ const t=pickLocked(); if(!t) return; state.unlocked.push(t.id); }
-
-  // UI/State
+  // UI & State
   function updateStatsUI(){
-    const total = allTracks().length;
+    const total = Object.values(Music.albums).flatMap(a=>a.tracks).length;
     el.statScore.textContent = state.score;
     el.statTracks.textContent = `${state.unlocked.length}/${total}`;
     el.statLevel.textContent = Math.floor(state.score/200)+1;
