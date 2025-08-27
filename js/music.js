@@ -42,11 +42,9 @@ window.Music = (function(){
   }
 
   function playAudio(track){
-    // Останавливаем предыдущий
     try{ window.__currentAudio?.pause(); }catch(e){}
     window.__currentAudio = null;
 
-    // Демо-URL для первых пяти треков
     const url = demoMap[track.id];
     if(url){
       const audio = new Audio(url);
@@ -60,7 +58,7 @@ window.Music = (function(){
       return;
     }
 
-    // Фолбэк: короткий beep
+    // Фолбэк beep
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
       const ctx = new AC();
