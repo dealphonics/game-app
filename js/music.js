@@ -1,10 +1,10 @@
 window.Music = (function(){
-  // Настройка репозитория/ветки/путей
+  // Укажите репозиторий (если изменится)
   const baseRepo = 'dealphonics/game-app';
-  const basePaths = [
-    (rel)=>`https://raw.githubusercontent.com/${baseRepo}/main/${rel}`,
-    (rel)=>`https://dealphonics.github.io/game-app/${rel}`,
-    (rel)=>`https://raw.githubusercontent.com/${baseRepo}/master/${rel}`
+  const buildUrl = [
+    rel => `https://raw.githubusercontent.com/${baseRepo}/main/${rel}`,
+    rel => `https://dealphonics.github.io/game-app/${rel}`,
+    rel => `https://raw.githubusercontent.com/${baseRepo}/master/${rel}`,
   ];
 
   // Альбомы и файлы
@@ -43,9 +43,8 @@ window.Music = (function(){
 
   function renderTracks(targetEl, albumKey, unlocked, onPlay){
     const album = albums[albumKey] || albums.karmageddon;
-    const list = album.tracks;
     targetEl.innerHTML = '';
-    list.forEach(track=>{
+    album.tracks.forEach(track=>{
       const isUnlocked = unlocked.includes(track.id);
       const row = document.createElement('div');
       row.className = 'track' + (isUnlocked?'':' locked');
@@ -55,7 +54,7 @@ window.Music = (function(){
           <div class="artist">${track.artist} · ${album.title}</div>
         </div>
         <button class="play" ${isUnlocked?'':'disabled'}>▶️</button>`;
-      row.querySelector('.play')?.addEventListener('click', ()=> onPlay(track, albumKey));
+      row.querySelector('.play')?.addEventListener('click', ()=> onPlay(track));
       targetEl.appendChild(row);
     });
   }
@@ -64,9 +63,7 @@ window.Music = (function(){
     try{ window.__currentAudio?.pause(); }catch(e){}
     window.__currentAudio = null;
 
-    // Перебор путей (raw main → pages → raw master)
-    const candidates = basePaths.map(f => f(track.path));
-
+    const candidates = buildUrl.map(f => f(track.path));
     for (let i=0;i<candidates.length;i++){
       const url = candidates[i];
       try{
@@ -77,15 +74,13 @@ window.Music = (function(){
         audio.volume = 0.9;
         await audio.play();
         window.__currentAudio = audio;
-        audio.onended = ()=> window.__currentAudio = null;
-        audio.onerror = ()=> {/* попробуем следующий */};
-        return; // успех
+        audio.onerror = ()=>{}; // пробуем следующий при явной ошибке в main.js, если захотим
+        return;
       }catch(e){
-        // пробуем следующий источник
+        // try next
       }
     }
-
-    // Фолбэк: beep и предупреждение
+    // Фолбэк
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
       const ctx = new AC();
@@ -95,8 +90,16 @@ window.Music = (function(){
       osc.frequency.value = 520; gain.gain.value = 0.15;
       osc.start(); setTimeout(()=>{ osc.stop(); ctx.close(); }, 500);
     }catch(e){}
-    tg.showAlert('Не удалось воспроизвести трек с GitHub. Проверьте пути/ветку или включите GitHub Pages.\nФайл: '+track.path);
+    tg.showAlert('Не удалось воспроизвести трек с GitHub. Проверьте путь: '+track.path);
   }
 
-  return { albums, renderTracks, playAudio };
+  // Поиск по трекам (для будущего добавления в очередь)
+  function searchTracks(query){
+    const q = (query||'').trim().toLowerCase();
+    if(!q) return [];
+    const all = Object.values(albums).flatMap(a=>a.tracks.map(t=>({...t, album:a.title})));
+    return all.filter(t => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q) || (t.album||'').toLowerCase().includes(q)).slice(0,8);
+  }
+
+  return { albums, renderTracks, playAudio, searchTracks };
 })();
