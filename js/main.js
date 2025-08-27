@@ -1,5 +1,5 @@
 (function(){
-  const SKEY = 'sk_state_v2';
+  const SKEY = 'sk_state_v3';
   const state = loadState();
 
   // DOM
@@ -18,13 +18,14 @@
     btnPause: document.getElementById('btnPause'),
     tracksList: document.getElementById('tracksList'),
     toast: document.getElementById('toast'),
-    albumSearch: document.getElementById('albumSearch'),
-    albumList: document.getElementById('albumList')
+    albumSearch: document.getElementById('albumSearch')
   };
 
   let controller = null;
   let timerId = null;
-  let currentAlbum = 'album1';
+
+  // Текущий альбом (karmageddon / psychi)
+  let currentAlbum = 'karmageddon';
 
   // Modal helpers
   function showModal(id){ const m=document.getElementById(id); if(m){ m.style.display='flex'; } }
@@ -68,28 +69,21 @@
   el.btnRestart.addEventListener('click', startGame);
   el.btnPause.addEventListener('click', pauseResumeGame);
 
-  // Album list click
-  el.albumList.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.album-item');
-    if(!btn) return;
-    el.albumList.querySelectorAll('.album-item').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    currentAlbum = btn.getAttribute('data-album');
-    renderTracks();
-  });
-
-  // Album search
+  // Album search (только поиск)
   el.albumSearch.addEventListener('input', ()=>{
     const q = el.albumSearch.value.trim().toLowerCase();
-    if(!q) return;
-    const map = { 'альбом 1':'album1', 'album 1':'album1', 'альбом 2':'album2', 'album 2':'album2' };
-    const found = Object.keys(map).find(k=>k.includes(q));
+    // Мэппинг по ключевым словам
+    const map = [
+      {key:'karmageddon', album:'karmageddon'},
+      {key:'кармагеддон', album:'karmageddon'},
+      {key:'kizaru', album:'karmageddon'},
+      {key:'психи', album:'psychi'},
+      {key:'макс корж', album:'psychi'},
+      {key:'psychi', album:'psychi'}
+    ];
+    const found = map.find(m=> q && m.key.includes(q));
     if(found){
-      currentAlbum = map[found];
-      // highlight in list
-      el.albumList.querySelectorAll('.album-item').forEach(b=>{
-        b.classList.toggle('active', b.getAttribute('data-album')===currentAlbum);
-      });
+      currentAlbum = found.album;
       renderTracks();
     }
   });
@@ -106,7 +100,7 @@
     controller = window.GameTarget(
       el.gameCanvas,
       (gameScore)=>{ el.gameScore.textContent = gameScore; },
-      // onHitUnlock: разблокируем и показываем заметное уведомление
+      // onHitUnlock: разблокируем прямо в игре
       ()=> { instantUnlockOne(); }
     );
     controller.start();
@@ -165,9 +159,11 @@
   }
 
   // Unlock helpers
+  function allTracks(){
+    return Object.values(Music.albums).flatMap(a=>a.tracks);
+  }
   function pickLockedRandom(){
-    const all = Object.values(Music.albums).flat();
-    const locked = all.filter(t=>!state.unlocked.includes(t.id));
+    const locked = allTracks().filter(t=>!state.unlocked.includes(t.id));
     if(locked.length===0) return null;
     return locked[Math.floor(Math.random()*locked.length)];
   }
@@ -177,7 +173,6 @@
     state.unlocked.push(t.id);
     saveState();
     updateStatsUI();
-    // сразу обновим список, если музыка открыта
     if (el.musicModal.style.display !== 'none') renderTracks();
     toast(`🎉 Новый трек: ${t.title}`);
   }
@@ -185,7 +180,7 @@
   // UI & State
   function updateStatsUI(){
     el.statScore.textContent = state.score;
-    const total = Object.values(Music.albums).flat().length;
+    const total = allTracks().length;
     el.statTracks.textContent = `${state.unlocked.length}/${total}`;
     el.statLevel.textContent = Math.floor(state.score/200)+1;
   }
