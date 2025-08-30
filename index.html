@@ -31,11 +31,12 @@
 
     <section class="actions">
       <button id="btnPlay" class="btn primary">🎯 Играть (Doodle Jump)</button>
+      <button id="btnPlayBB" class="btn">🧊 Играть (Block Blast)</button>
       <button id="btnMusic" class="btn accent">🎵 Моя коллекция</button>
     </section>
   </div>
 
-  <!-- Game modal -->
+  <!-- Game modal (Doodle Jump) -->
   <div id="gameModal" class="modal" style="display:none">
     <div class="modal-content">
       <div class="modal-header">
@@ -60,7 +61,35 @@
             </div>
           </div>
         </div>
-        <!-- подсказку убрал по вашей просьбе -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Block Blast modal -->
+  <div id="bbModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🧊 Block Blast</div>
+        <button class="modal-close" data-close="bbModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="game-info">
+          <div><b>Очки:</b> <span id="bbScore">0</span></div>
+          <div><b>Рекорд:</b> <span id="bbBestTop">0</span></div>
+        </div>
+        <div class="game-frame">
+          <canvas id="bbCanvas" width="360" height="520"></canvas>
+
+          <!-- Окно завершения игры -->
+          <div id="bbOverOverlay" class="gameover-overlay" style="display:none;">
+            <div class="gameover-panel">
+              <div class="go-title">Игра окончена</div>
+              <div class="go-score">Очки: <span id="bbGoScore">0</span></div>
+              <div class="go-best">Рекорд: <span id="bbGoBest">0</span></div>
+              <button id="btnBBPlayAgain" class="btn primary">🔄 Играть снова</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -110,6 +139,7 @@
 
   <script src="./js/tg.js"></script>
   <script src="./js/doodle.js"></script>
+  <script src="./js/blockblast.js"></script>
   <script src="./js/music.js"></script>
   <script src="./js/main.js"></script>
 </body>
