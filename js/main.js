@@ -6,22 +6,38 @@
     statScore: document.getElementById('statScore'),
     statTracks: document.getElementById('statTracks'),
     statLevel: document.getElementById('statLevel'),
+
+    // Main buttons
     btnPlay: document.getElementById('btnPlay'),
+    btnPlayBB: document.getElementById('btnPlayBB'),
     btnMusic: document.getElementById('btnMusic'),
+
+    // Doodle modal
     gameModal: document.getElementById('gameModal'),
-    musicModal: document.getElementById('musicModal'),
     gameScore: document.getElementById('gameScore'),
     gameTime: document.getElementById('gameTime'),
     gameCanvas: document.getElementById('gameCanvas'),
-    tracksList: document.getElementById('tracksList'),
-    toast: document.getElementById('toast'),
-    albumSearch: document.getElementById('albumSearch'),
-    searchResults: document.getElementById('searchResults'),
     gameOverOverlay: document.getElementById('gameOverOverlay'),
     goHeight: document.getElementById('goHeight'),
     goBest: document.getElementById('goBest'),
     btnPlayAgain: document.getElementById('btnPlayAgain'),
-    // Player
+
+    // Block Blast modal
+    bbModal: document.getElementById('bbModal'),
+    bbScore: document.getElementById('bbScore'),
+    bbBestTop: document.getElementById('bbBestTop'),
+    bbCanvas: document.getElementById('bbCanvas'),
+    bbOverOverlay: document.getElementById('bbOverOverlay'),
+    bbGoScore: document.getElementById('bbGoScore'),
+    bbGoBest: document.getElementById('bbGoBest'),
+    btnBBPlayAgain: document.getElementById('btnBBPlayAgain'),
+
+    // Music & player
+    musicModal: document.getElementById('musicModal'),
+    tracksList: document.getElementById('tracksList'),
+    toast: document.getElementById('toast'),
+    albumSearch: document.getElementById('albumSearch'),
+    searchResults: document.getElementById('searchResults'),
     playerPrev: document.getElementById('playerPrev'),
     playerPlay: document.getElementById('playerPlay'),
     playerNext: document.getElementById('playerNext'),
@@ -34,6 +50,7 @@
   };
 
   let doodle=null, timerId=null;
+  let bb=null;
   let currentAlbum='karmageddon';
   const player={ queue:[], index:-1, seeking:false };
 
@@ -43,21 +60,28 @@
     else{ html.classList.remove('modal-lock'); body.classList.remove('modal-lock'); }
   }
 
-  function showModal(id){ const m=document.getElementById(id); if(m){ m.style.display='flex'; if(id==='gameModal') lockScroll(true); } }
+  function showModal(id){
+    const m=document.getElementById(id);
+    if(m){
+      m.style.display='flex';
+      if(id==='gameModal' || id==='bbModal') lockScroll(true);
+    }
+  }
   function hideModal(id){
     const m=document.getElementById(id); if(!m) return;
     m.style.display='none';
     if(id==='gameModal'){ stopGame(true); lockScroll(false); }
+    if(id==='bbModal'){ stopBBGame(true); lockScroll(false); }
   }
 
   document.querySelectorAll('.modal-close').forEach(btn=>{
     btn.addEventListener('click', (e)=>{ e.stopPropagation();
       const id=btn.getAttribute('data-close')||btn.closest('.modal')?.id; if(id) hideModal(id); });
   });
-  [el.gameModal, el.musicModal].forEach(mod=>{
+  [el.gameModal, el.musicModal, el.bbModal].forEach(mod=>{
     mod.addEventListener('click', (e)=>{ if(e.target===mod) hideModal(mod.id); }, {passive:true});
   });
-  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ hideModal('gameModal'); hideModal('musicModal'); } });
+  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ hideModal('gameModal'); hideModal('bbModal'); hideModal('musicModal'); } });
 
   // Player bar: stop propagation to avoid conflict
   [el.playerPrev, el.playerPlay, el.playerNext, el.playerProgress].forEach(b=>{
@@ -66,9 +90,16 @@
     b.addEventListener('touchstart', e=> e.stopPropagation(), {passive:true});
   });
 
+  // Open modals
   el.btnPlay.addEventListener('click', ()=>{ showModal('gameModal'); startGame(); });
+  el.btnPlayBB.addEventListener('click', ()=>{ showModal('bbModal'); startBBGame(); });
   el.btnMusic.addEventListener('click', ()=>{ showModal('musicModal'); renderTracks(); });
+
+  // Doodle over actions
   el.btnPlayAgain.addEventListener('click', (e)=>{ e.stopPropagation(); hideGameOver(); startGame(); });
+
+  // Block Blast over actions
+  el.btnBBPlayAgain.addEventListener('click', (e)=>{ e.stopPropagation(); hideBBGameOver(); startBBGame(); });
 
   // Player bar
   el.playerPrev.addEventListener('click', ()=> prevTrack());
@@ -112,6 +143,7 @@
 
   updateStatsUI(); renderTracks(); bindAudio();
 
+  /* ========= Doodle Jump ========= */
   function startGame(){
     hideGameOver();
     stopGame(true);
@@ -147,9 +179,53 @@
   }
   function hideGameOver(){ el.gameOverOverlay.style.display='none'; }
 
-  /* Rarity drop */
+  /* ========= Block Blast ========= */
+  function startBBGame(){
+    hideBBGameOver();
+    stopBBGame(true);
+    el.bbScore.textContent='0';
+    el.bbBestTop.textContent = loadBBBest();
+    bb = window.BlockBlast(
+      el.bbCanvas,
+      sc => {
+        el.bbScore.textContent = sc;
+        // обновим рекорд на лету
+        const best = loadBBBest();
+        if(sc > best){ saveBBBest(sc); el.bbBestTop.textContent = sc; }
+      },
+      evType => { attemptDrop(evType); }, // 'landing'/'kill' — используются для вероятности дропа
+      finalScore => { stopBBGame(false, finalScore); showBBGameOver(finalScore); }
+    );
+    bb.start();
+  }
+
+  function stopBBGame(silent=false, finalScore=null){
+    try{ bb?.stop(); }catch(e){}
+    bb=null;
+    const gained = parseInt(el.bbScore.textContent||'0',10)||0;
+    if(!silent && gained>0){
+      state.score += gained;
+      if(Math.random()<0.08) unlockByRarity();
+      const best = loadBBBest(); const s = (finalScore ?? gained);
+      if(s > best){ saveBBBest(s); }
+      saveState(); updateStatsUI();
+    }
+  }
+
+  function showBBGameOver(score){
+    el.bbGoScore.textContent = score || el.bbScore.textContent;
+    el.bbGoBest.textContent = loadBBBest();
+    el.bbOverOverlay.style.display='flex';
+  }
+  function hideBBGameOver(){ el.bbOverOverlay.style.display='none'; }
+
+  /* Rarity drop (общий для обеих игр) */
   const weights = { common:70, rare:20, epic:8, legendary:2 };
-  function attemptDrop(evType){ const p = evType==='kill' ? 0.03 : 0.02; if(Math.random()<p) unlockByRarity(); }
+  function attemptDrop(evType){
+    // в Doodle evType: 'landing'|'kill'; в BlockBlast даю 'landing' при установке и 'kill' при чистке линий
+    const p = evType==='kill' ? 0.03 : 0.02;
+    if(Math.random()<p) unlockByRarity();
+  }
   function unlockByRarity(){
     const all = Object.values(Music.albums).flatMap(a=>a.tracks);
     const locked = all.filter(t=>!state.unlocked.includes(t.id)); if(!locked.length) return;
@@ -167,7 +243,7 @@
   }
   function label(r){ return {common:'Обычный', rare:'Редкий', epic:'Эпический', legendary:'Легендарный'}[r]||''; }
 
-  /* Timer */
+  /* Timer (для Doodle) */
   function startTimer(){
     stopTimer();
     const start=Date.now();
@@ -248,6 +324,8 @@
   }
   function loadBest(){ try{ return parseInt(localStorage.getItem('sk_best_height')||'0',10)||0; }catch(e){ return 0; } }
   function saveBest(v){ try{ localStorage.setItem('sk_best_height', String(v)); }catch(e){} }
+  function loadBBBest(){ try{ return parseInt(localStorage.getItem('sk_bb_best')||'0',10)||0; }catch(e){ return 0; } }
+  function saveBBBest(v){ try{ localStorage.setItem('sk_bb_best', String(v)); }catch(e){} }
   function loadState(){
     try{
       const raw=localStorage.getItem(SKEY);
