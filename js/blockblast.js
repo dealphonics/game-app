@@ -6,20 +6,30 @@
     const GRID = 10;
     const PADDING = 12;
     const GAP = 8;
+    const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+
+    // Input support
+    const SUPPORTS_POINTER = 'PointerEvent' in window;
+    const SUPPORTS_TOUCH = 'ontouchstart' in window || (navigator.maxTouchPoints|0) > 0;
 
     let running = false;
+
+    // Board state
     let board = Array.from({length:GRID},()=>Array(GRID).fill(0));
     let score = 0;
     let pieces = [];
+
+    // Drag state
     let drag = {
       active:false, idx:-1,
       offsetX:0, offsetY:0, topLeftX:0, topLeftY:0,
       over:false, valid:false, cells:[]
     };
 
-    // Geometry
-    let cell=24, boardX=0, boardY=0, boardSize=0, trayY=0, trayHeight=0, slotW=0;
+    // Geometry (в координатах CSS-пикселей)
+    let cssW=0, cssH=0, cell=24, boardX=0, boardY=0, boardSize=0, trayY=0, trayHeight=0, slotW=0;
 
+    // Visuals
     const COLORS = ['#5cc8ff','#ff7aa2','#ffd166','#9ce37d','#b792ff','#ffad5a','#57e0b3'];
     const SHAPES = [
       [[0,0]], // 1
@@ -48,7 +58,9 @@
     function start(){
       running = true;
       reset();
+      // Делаем два layout: сразу и после отрисовки (когда модалка уже видима)
       layout();
+      setTimeout(layout, 0);
       bind();
       render();
     }
@@ -81,17 +93,36 @@
       return {minX,minY,maxX,maxY,w:maxX-minX+1,h:maxY-minY+1};
     }
 
+    function setCanvasSize(){
+      // работаем в CSS-координатах; бэкбуфер — с учётом DPR
+      const rect = canvas.getBoundingClientRect();
+      let w = Math.floor(rect.width || canvas.clientWidth || canvas.width || 360);
+      let h = Math.floor(rect.height || canvas.clientHeight || canvas.height || 520);
+      if(w===0 || h===0){ // если модалка только что открыта
+        w = canvas.width || 360;
+        h = canvas.height || 520;
+      }
+      cssW = w; cssH = h;
+      canvas.width = Math.floor(w * DPR);
+      canvas.height = Math.floor(h * DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0); // далее рисуем в CSS-пикселях
+    }
+
     function layout(){
-      // Подогнать под размеры канваса
-      let cellH = Math.floor((canvas.height - PADDING*2 - GAP) / (GRID + 4));
-      let cellW = Math.floor((canvas.width  - PADDING*2)      / GRID);
-      cell = Math.max(12, Math.min(cellH, cellW));
+      setCanvasSize();
+
+      // Подбираем размер клетки по ширине/высоте
+      const cellByW = Math.floor((cssW - PADDING*2) / GRID);
+      const cellByH = Math.floor((cssH - PADDING*2 - GAP) / (GRID + 4));
+      cell = Math.max(12, Math.min(cellByW, cellByH));
+
       boardSize = cell * GRID;
       trayHeight = cell * 4;
-      boardX = Math.floor((canvas.width - boardSize)/2);
+      boardX = Math.floor((cssW - boardSize)/2);
       boardY = PADDING;
       trayY = boardY + boardSize + GAP;
       slotW = Math.floor(boardSize/3);
+
       placePiecesInTray();
       render();
     }
@@ -111,21 +142,72 @@
 
     // ===== Events
     function bind(){
-      canvas.addEventListener('pointerdown', onDown);
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
+      if(SUPPORTS_POINTER){
+        canvas.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+      }else{
+        if(SUPPORTS_TOUCH){
+          canvas.addEventListener('touchstart', onTouchStart, { passive:false });
+          window.addEventListener('touchmove', onTouchMove, { passive:false });
+          window.addEventListener('touchend', onTouchEnd, { passive:true });
+          window.addEventListener('touchcancel', onTouchEnd, { passive:true });
+        }
+        // mouse fallback (десктопы/старые вебвью)
+        canvas.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      }
       window.addEventListener('resize', layout, {passive:true});
+      window.addEventListener('orientationchange', layout);
     }
     function unbind(){
-      canvas.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+
+      canvas.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
+
+      canvas.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+
       window.removeEventListener('resize', layout);
+      window.removeEventListener('orientationchange', layout);
     }
 
-    function onDown(e){
-      if(!running) return;
-      const {x,y} = rel(e);
+    // Unified coords
+    function eventPoint(e){
+      if(e.touches && e.touches.length){ return { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+      if(e.changedTouches && e.changedTouches.length){ return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }; }
+      return { x: e.clientX, y: e.clientY };
+    }
+    function relFromClient(clientX, clientY){
+      const r=canvas.getBoundingClientRect();
+      return { x: clientX - r.left, y: clientY - r.top }; // координаты в CSS-пикселях (как и рисование)
+    }
+    function rel(e){ const p = eventPoint(e); return relFromClient(p.x, p.y); }
+
+    // Pointer
+    function onPointerDown(e){ e.preventDefault?.(); if(!running) return; const {x,y}=rel(e); handleDown(x,y); }
+    function onPointerMove(e){ if(!running || !drag.active) return; const {x,y}=rel(e); handleMove(x,y); }
+    function onPointerUp(){ if(!running) return; handleUp(); }
+
+    // Touch
+    function onTouchStart(e){ if(!running) return; e.preventDefault(); const {x,y}=rel(e); handleDown(x,y); }
+    function onTouchMove(e){ if(!running || !drag.active) return; e.preventDefault(); const {x,y}=rel(e); handleMove(x,y); }
+    function onTouchEnd(){ if(!running) return; handleUp(); }
+
+    // Mouse
+    function onMouseDown(e){ if(!running) return; const {x,y}=rel(e); handleDown(x,y); }
+    function onMouseMove(e){ if(!running || !drag.active) return; const {x,y}=rel(e); handleMove(x,y); }
+    function onMouseUp(){ if(!running) return; handleUp(); }
+
+    // Handlers
+    function handleDown(x,y){
       const idx = hitPiece(x,y);
       if(idx===-1) return;
       const p = pieces[idx];
@@ -138,9 +220,8 @@
       try{ tg.HapticFeedback.impactOccurred('light'); }catch(e){}
       render();
     }
-    function onMove(e){
-      if(!drag.active || !running) return;
-      const {x,y} = rel(e);
+
+    function handleMove(x,y){
       drag.topLeftX = x - drag.offsetX;
       drag.topLeftY = y - drag.offsetY;
 
@@ -158,18 +239,13 @@
       }
       render();
     }
-    function onUp(){
-      if(!drag.active || !running) return;
+
+    function handleUp(){
       if(drag.over && drag.valid){
         placeDragged();
       }
       drag.active=false; drag.idx=-1; drag.cells=[]; drag.valid=false;
       render();
-    }
-
-    function rel(e){
-      const r=canvas.getBoundingClientRect();
-      return { x: (e.clientX - r.left), y: (e.clientY - r.top) };
     }
 
     function hitPiece(px,py){
@@ -207,8 +283,7 @@
         try{ tg.HapticFeedback.impactOccurred('medium'); }catch(e){}
         onAttemptDrop?.('kill'); // повышенный шанс
       }else{
-        // маленький шанс «дропа» на установке
-        onAttemptDrop?.('landing');
+        onAttemptDrop?.('landing'); // небольшой шанс на установке
       }
 
       pieces[drag.idx].placed=true;
@@ -264,13 +339,11 @@
 
     // ===== Render
     function render(){
-      const W=canvas.width, H=canvas.height;
-      ctx.clearRect(0,0,W,H);
-
-      // background
-      const g=ctx.createLinearGradient(0,0,0,H);
+      // фон
+      ctx.clearRect(0,0,cssW,cssH);
+      const g=ctx.createLinearGradient(0,0,0,cssH);
       g.addColorStop(0,'#0f1424'); g.addColorStop(1,'#0a0e18');
-      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=g; ctx.fillRect(0,0,cssW,cssH);
 
       drawBoard();
       drawPiecesTray();
@@ -279,9 +352,9 @@
     }
 
     function drawBoard(){
-      // panel
+      // панель
       roundRect(boardX, boardY, boardSize, boardSize, 12, true, '#141a2a');
-      // grid
+      // сетка
       ctx.strokeStyle='rgba(255,255,255,0.06)';
       ctx.lineWidth=1;
       ctx.beginPath();
@@ -293,7 +366,7 @@
       }
       ctx.stroke();
 
-      // filled cells
+      // занятые клетки
       for(let r=0;r<GRID;r++){
         for(let c=0;c<GRID;c++){
           if(board[r][c]){
