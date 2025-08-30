@@ -51,6 +51,10 @@ body{
   overflow: hidden !important;
   padding: 12px 12px 160px 12px !important; /* гарантировано выше плеера */
 }
+#bbModal .modal-body{
+  overflow: hidden !important;
+  padding: 12px 12px 160px 12px !important; /* гарантировано выше плеера */
+}
 
 /* Game */
 .game-frame{
@@ -59,7 +63,8 @@ body{
   border-radius:12px;
   padding:10px;background:#0b0b0f;
 }
-#gameCanvas{
+#gameCanvas,
+#bbCanvas{
   display:block;margin:0 auto;border:1px solid #000;border-radius:6px;background:#000;max-width:100%;
   touch-action:none; /* без тач-скролла */
 }
