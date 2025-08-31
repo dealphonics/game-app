@@ -15,13 +15,13 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
   // ----- Player -----
   const player = {
-  x: W/2, y: H-100, w: 40, h: 50,   // было 30x38 → стало больше
-  vx: 0, vy: 0,
-  baseSpeed: 2.35,
-  jump: -10.2,
-  dir: 1,
-  invul: 0, shield: 0, jetpack: 0, boots: 0, shotCooldown: 0
-};
+    x: W/2, y: H-100, w: 30, h: 38,
+    vx: 0, vy: 0,
+    baseSpeed: 2.35,
+    jump: -10.2,
+    dir: 1,
+    invul: 0, shield: 0, jetpack: 0, boots: 0, shotCooldown: 0
+  };
 
   // ----- Entities -----
   let plats = [], mobs = [], bullets = [], particles = [], pickups = [];
@@ -124,58 +124,57 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     return 'solid';
   }
 
-    // makePlat: пружина привязываем как offset (ox/oy) относительно платформы
+  // makePlat: пружина привязываем как offset (ox/oy) относительно платформы
   function makePlat(x, y, w, h, type){
-  const p = {x, y, w, h, type, vx:0, life:Infinity, spring:null, pickup:null};
-  if(type==='move') p.vx = randSign()*rand(0.5,1.0);
-  if(type==='disappear') p.life = 2;
-  if(type==='crumble')   p.life = 1;
+    const p = {x, y, w, h, type, vx:0, life:Infinity, spring:null};
+    if(type==='move') p.vx = randSign()*rand(0.5,1.0);
+    if(type==='disappear') p.life = 2;
+    if(type==='crumble')   p.life = 1;
 
-  // пружина
-  if(Math.random()<0.10){
-    const sw = 20, sh = 12;
-    const sx = rand(6, Math.max(6, w - sw - 6));
-    const sy = -sh + 2;
-    p.spring = { ox: sx, oy: sy, w: sw, h: sh, type: 'spring' };
+    // Пружина всегда НА платформе (маленькая)
+    if(Math.random()<0.22){
+      const sw = 20, sh = 12;
+      const sx = rand(6, Math.max(6, w - sw - 6));
+      const sy = -sh + 2; // oy relative to platform.y
+      // store relative offsets
+      p.spring = { ox: sx, oy: sy, w: sw, h: sh, type: 'spring' };
+    }
+    return p;
   }
 
-  // бонус на платформе (реже, чем пружина)
-  if(Math.random()<0.08){
-    const bw = 26, bh = 26;
-    const bx = rand(6, Math.max(6, w - bw - 6));
-    const by = -bh; // прямо на платформе
-    const kindRoll = Math.random();
-    let type = 'boots';
-    if(kindRoll<0.33) type='boots';
-    else if(kindRoll<0.66) type='jetpack';
-    else type='shield';
-    p.pickup = { ox: bx, oy: by, w: bw, h: bh, type, active:true };
-  }
+  function spawnNextRow(){
+    const top = plats[plats.length-1];
+    const yTop = top.y - rand(56,64);
+    const p = makePlat(rand(20, W-84), yTop, 64, 10, pickPlatType());
+    plats.push(p);
 
-  return p;
-}
+    // pickups плавают в воздухе (как раньше), но будут проверяться на видимость перед сбором
+    if(Math.random()<0.22){
+      const kindRoll = Math.random();
+      const fx = rand(10, W-42);
+      const fy = yTop - rand(36, 64);
+      if(kindRoll<0.34) pickups.push({x:fx,y:fy,w:30,h:30,type:'boots', active:true});
+      else if(kindRoll<0.60) pickups.push({x:fx,y:fy,w:30,h:30,type:'jetpack', active:true});
+      else pickups.push({x:fx,y:fy,w:30,h:30,type:'shield', active:true});
+    }
 
-
-    // мобы остаются редкими (10%)
-    // spawnNextRow()
-if(Math.random()<0.10){
-  const t = Math.random();
-  if(t<0.55) mobs.push({x:rand(10,W-40), y:yTop-36, w:40, h:36, type:'walker', vx:randSign()*rand(0.6,1.0), vy:0, alive:true, phase:Math.random()*6.28});
-  else       mobs.push({x:rand(10,W-36), y:yTop-46, w:36, h:30, type:'flyer',  vx:randSign()*rand(0.5,0.9), vy:rand(-0.3,0.3), alive:true, ph:Math.random()*6.28});
-}
-
+    // мобы реже
+    if(Math.random()<0.10){
+      const t = Math.random();
+      if(t<0.55) mobs.push({x:rand(10,W-34), y:yTop-28, w:32, h:28, type:'walker', vx:randSign()*rand(0.6,1.0), vy:0, alive:true, phase:Math.random()*6.28});
+      else       mobs.push({x:rand(10,W-30), y:yTop-38, w:28, h:24, type:'flyer',  vx:randSign()*rand(0.5,0.9), vy:rand(-0.3,0.3), alive:true, ph:Math.random()*6.28});
+    }
 
     if(plats.length>64) plats.splice(0,1);
   }
 
   // ----- Shooting -----
   function shoot(){
-  if(player.shotCooldown>0) return;
-  bullets.push({x:player.x+player.w/2-3, y:player.y+4, vy:-14, r:6}); // r=6 вместо r=3
-  player.shotCooldown=9;
-  tg.HapticFeedback.impactOccurred('light');
-}
-
+    if(player.shotCooldown>0) return;
+    bullets.push({x:player.x+player.w/2-2, y:player.y+4, vy:-14, r:3});
+    player.shotCooldown=9;
+    tg.HapticFeedback.impactOccurred('light');
+  }
 
   // ----- Update -----
   function update(){
@@ -414,19 +413,12 @@ if(Math.random()<0.10){
     });
 
     // Bullets
-    // draw()
     bullets.forEach(b=>{
       const y = b.y + offY;
       if(y<-20||y>H+20) return;
-      ctx.fillStyle = '#ffeb3b';   // ярко-жёлтая пуля
-      ctx.beginPath();
-      ctx.arc(b.x, y, b.r, 0, Math.PI*2);
-      ctx.fill();
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      if(Spr.bullet?.complete) ctx.drawImage(Spr.bullet, b.x-6/2, y-12/2, 6, 12);
+      else { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(b.x, y, b.r, 0, Math.PI*2); ctx.fill(); }
     });
-
 
     // Player (shield sphere and sprite)
     drawPlayer(player.x, player.y+offY);
