@@ -1,5 +1,4 @@
-// Doodle Jump — версия с бонусами на платформах и увеличенными размерами
-
+// Doodle Jump — версия с наклоном и редкими бонусами
 window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -22,6 +21,28 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
   // ----- Tilt control -----
   let tiltEnabled = false, tiltX = 0;
+  function enableTilt(){
+    if(tiltEnabled) return;
+    if(typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function'){
+      DeviceOrientationEvent.requestPermission()
+        .then(state=>{
+          if(state==='granted'){
+            window.addEventListener('deviceorientation', onTilt, {passive:true});
+            tiltEnabled = true;
+          }
+        }).catch(()=>{});
+    } else {
+      window.addEventListener('deviceorientation', onTilt, {passive:true});
+      tiltEnabled = true;
+    }
+  }
+  function onTilt(e){
+    if(e && typeof e.gamma==='number'){
+      const g = Math.max(-20, Math.min(20, e.gamma));
+      tiltX = g / 15; // нормализуем
+    }
+  }
 
   // ----- Assets -----
   const Spr = {};
@@ -83,12 +104,12 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     if(type==='disappear') p.life = 2;
     if(type==='crumble') p.life = 1;
 
-    // шанс пружины
-    if(Math.random()<0.15){
+    // шанс пружины (5%)
+    if(Math.random()<0.05){
       p.spring = {ox:(w-20)/2, oy:-12, w:20, h:12};
     }
-    // шанс бонуса
-    else if(Math.random()<0.15){
+    // шанс бонуса (ещё 5%)
+    else if(Math.random()<0.05){
       const kind = Math.random();
       let type='boots';
       if(kind<0.33) type='boots';
@@ -105,6 +126,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     bullets.push({x:player.x+player.w/2-3, y:player.y, vy:-14, r:6});
     player.shotCooldown=9;
   }
+  canvas.addEventListener('pointerdown', shoot, {passive:true});
 
   // ----- Update -----
   function update(){
@@ -237,8 +259,8 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
   function loop(){ if(running){ update(); draw(); raf=requestAnimationFrame(loop); } }
 
-  function start(){ stop(); reset(); running=true; loop(); }
+  function start(){ stop(); reset(); running=true; enableTilt(); loop(); }
   function stop(){ running=false; cancelAnimationFrame(raf); }
 
-  return { start, stop, enableTilt:()=>{} };
+  return { start, stop };
 };
