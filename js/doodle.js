@@ -1,5 +1,8 @@
-// Doodle Jump — sprites, springs on platforms, shield sphere, fixed gameover freeze
-// Кирилл, этот файл полностью готов к замене. Нужны PNG из папки /img (см. список в сообщении).
+// Doodle Jump — исправленная версия
+// - пружины привязаны к платформам (spring.ox/oy)
+// - pickups активируются только когда видимы и активны (устранение самоподборов)
+// - стабильное завершение игры (onGameOver вызывается, цикл корректно останавливается)
+// - сохранены спрайты и фолбэки
 
 window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   const ctx = canvas.getContext('2d');
@@ -14,8 +17,8 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   const player = {
     x: W/2, y: H-100, w: 30, h: 38,
     vx: 0, vy: 0,
-    baseSpeed: 2.35,     // немножко ниже
-    jump: -10.2,         // базовый прыжок
+    baseSpeed: 2.35,
+    jump: -10.2,
     dir: 1,
     invul: 0, shield: 0, jetpack: 0, boots: 0, shotCooldown: 0
   };
@@ -73,8 +76,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function onTilt(e){
     if(e && typeof e.gamma==='number'){
       const g = Math.max(-20, Math.min(20, e.gamma));
-      // ниже чувствительность (ближе к оригиналу)
-      tiltX = g / 22;
+      tiltX = g / 22; // уменьшенная чувствительность
     }
   }
 
@@ -108,9 +110,9 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     plats.push(makePlat(W/2-45, H-22, 90, 12, 'solid'));
     for(let i=1;i<14;i++){
       const y = H-22 - i*58;
-      plats.push(makePlat(rand(20, W-84), y, 64, 10, pickPlatType()));
+      const x = rand(20, W-84);
+      plats.push(makePlat(x, y, 64, 10, pickPlatType()));
     }
-    // гарантируем достаточную высоту генерации
     plats.sort((a,b)=> b.y - a.y);
   }
 
@@ -122,40 +124,41 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     return 'solid';
   }
 
+  // makePlat: пружина привязываем как offset (ox/oy) относительно платформы
   function makePlat(x, y, w, h, type){
     const p = {x, y, w, h, type, vx:0, life:Infinity, spring:null};
     if(type==='move') p.vx = randSign()*rand(0.5,1.0);
     if(type==='disappear') p.life = 2;
     if(type==='crumble')   p.life = 1;
 
-    // 🎯 Пружина всегда НА платформе (маленькая)
+    // Пружина всегда НА платформе (маленькая)
     if(Math.random()<0.22){
-      const sw=20, sh=12;
-      const sx = x + rand(6, Math.max(6, w-sw-6));
-      const sy = y - sh + 2; // чуть «утоплена» в платформу
-      p.spring = {x:sx, y:sy, w:sw, h:sh, type:'spring'};
+      const sw = 20, sh = 12;
+      const sx = rand(6, Math.max(6, w - sw - 6));
+      const sy = -sh + 2; // oy relative to platform.y
+      // store relative offsets
+      p.spring = { ox: sx, oy: sy, w: sw, h: sh, type: 'spring' };
     }
     return p;
   }
 
   function spawnNextRow(){
-    const top = plats[plats.length-1]; // самый верхний по массиву
+    const top = plats[plats.length-1];
     const yTop = top.y - rand(56,64);
     const p = makePlat(rand(20, W-84), yTop, 64, 10, pickPlatType());
     plats.push(p);
 
-    // Пикапы крупнее (как просил) — НЕ на пружинах
+    // pickups плавают в воздухе (как раньше), но будут проверяться на видимость перед сбором
     if(Math.random()<0.22){
-      // пикапы размещаем отдельно (висят в воздухе), но чуть выше платформы
       const kindRoll = Math.random();
       const fx = rand(10, W-42);
       const fy = yTop - rand(36, 64);
-      if(kindRoll<0.34) pickups.push({x:fx,y:fy,w:30,h:30,type:'boots'});
-      else if(kindRoll<0.60) pickups.push({x:fx,y:fy,w:30,h:30,type:'jetpack'});
-      else pickups.push({x:fx,y:fy,w:30,h:30,type:'shield'});
+      if(kindRoll<0.34) pickups.push({x:fx,y:fy,w:30,h:30,type:'boots', active:true});
+      else if(kindRoll<0.60) pickups.push({x:fx,y:fy,w:30,h:30,type:'jetpack', active:true});
+      else pickups.push({x:fx,y:fy,w:30,h:30,type:'shield', active:true});
     }
 
-    // Мобы реже
+    // мобы реже
     if(Math.random()<0.10){
       const t = Math.random();
       if(t<0.55) mobs.push({x:rand(10,W-34), y:yTop-28, w:32, h:28, type:'walker', vx:randSign()*rand(0.6,1.0), vy:0, alive:true, phase:Math.random()*6.28});
@@ -168,7 +171,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   // ----- Shooting -----
   function shoot(){
     if(player.shotCooldown>0) return;
-    bullets.push({x:player.x+player.w/2-2, y:player.y+4, vy:-14, r:3}); // быстрее пули
+    bullets.push({x:player.x+player.w/2-2, y:player.y+4, vy:-14, r:3});
     player.shotCooldown=9;
     tg.HapticFeedback.impactOccurred('light');
   }
@@ -177,7 +180,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function update(){
     frame++;
 
-    // Tilt: сглаживание + низкая чувствительность
     if(tiltEnabled){
       const target = tiltX * player.baseSpeed * 1.7;
       player.vx += (target - player.vx)*0.35;
@@ -189,7 +191,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
     const gearInvul = (player.jetpack>0 || player.boots>0);
 
-    // Вертикальная физика
+    // vertical physics
     if(player.jetpack>0){
       player.vy -= 0.26;
       if(player.vy < -7.8) player.vy = -7.8;
@@ -199,31 +201,31 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       player.vy += 0.35;
     }
 
-    // Движение
     player.x += player.vx; player.y += player.vy;
     if(player.vx>0) player.dir=1; else if(player.vx<0) player.dir=-1;
     if(player.x<-player.w) player.x=W; if(player.x>W) player.x=-player.w;
 
-    // Платформы
+    // platforms movement
     plats.forEach(p=>{
       if(p.type==='move'){ p.x+=p.vx; if(p.x<0||p.x+p.w>W) p.vx*=-1; }
     });
 
-    // Приземления (платформы / пружины)
+    // Landing detection (including springs attached to platforms)
     if(player.vy>0){
       for(const p of plats){
-        // контакт с платформой
         if(player.x+player.w>p.x && player.x<p.x+p.w &&
            player.y+player.h>p.y && player.y+player.h<p.y+p.h + player.vy){
 
-          // сначала проверяем пружину (если попали на неё)
+          // check spring on platform (spring coordinates computed from platform)
           if(p.spring){
-            const s=p.spring;
+            const sx = p.x + p.spring.ox;
+            const sy = p.y + p.spring.oy;
+            const s = { x: sx, y: sy, w: p.spring.w, h: p.spring.h };
             const onSpring = (player.x+player.w> s.x && player.x < s.x+s.w &&
                               player.y+player.h > s.y && player.y+player.h < s.y+s.h + player.vy);
             if(onSpring){
               player.y = s.y - player.h + 2;
-              player.vy = player.jump * 2.6; // мощный прыжок
+              player.vy = player.jump * 2.6;
               particles.push({x:s.x+s.w/2,y:s.y,life:18,color:'#fff'});
               tg.HapticFeedback.impactOccurred('light');
               if(Math.random()<0.02) onAttemptDrop?.('landing');
@@ -231,7 +233,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
             }
           }
 
-          // обычное приземление
+          // normal landing
           const boost = player.boots>0 ? 1.7 : 1.0;
           player.y = p.y - player.h;
           player.vy = player.jump*boost;
@@ -243,23 +245,23 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
     }
 
-    // Мобы (исправлено: без return из update)
+    // Mobs (safe loop, no early return)
     for (let i=0; i<mobs.length; i++) {
       const m = mobs[i];
       if(!m.alive) continue;
 
       if(m.type==='walker'){
         m.x += m.vx;
-        m.y += Math.sin(frame*0.12 + m.phase)*0.6; // лёгкая тряска
+        m.y += Math.sin(frame*0.12 + m.phase)*0.6;
         if(m.x<0||m.x+m.w>W) m.vx*=-1;
       } else {
         m.ph += 0.04;
         m.x += m.vx;
-        m.y += Math.sin(m.ph)*1.1 + m.vy; // волнистая траектория
+        m.y += Math.sin(m.ph)*1.1 + m.vy;
         if(m.x<0||m.x+m.w>W) m.vx*=-1;
       }
 
-      // попадание пули
+      // bullets hitting mobs
       for(const b of bullets){
         if(b.x>m.x && b.x<m.x+m.w && b.y>m.y && b.y<m.y+m.h){
           m.alive=false; b.y=-9999;
@@ -269,13 +271,11 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
         }
       }
 
-      // столкновение с игроком
+      // collision with player
       if(player.x+player.w>m.x && player.x<m.x+m.w &&
          player.y+player.h>m.y && player.y<m.y+m.h){
 
-        // Со щитом/джетпаком/ботинками — не «чувствуем» моба, не тормозим
         if(gearInvul || player.invul>0 || player.shield>0){
-          // Если сверху — убиваем моба и отталкиваемся
           const fromTop = (player.vy>0 && player.y < m.y);
           if(fromTop){
             m.alive=false;
@@ -283,13 +283,12 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
             player.vy = player.jump * mult;
             particles.push({x:m.x+m.w/2,y:m.y,life:24,color:'#6f6'});
             tg.HapticFeedback.impactOccurred('medium');
-            if(player.shield>0) player.shield = Math.max(0, player.shield-1); // расходуем «прочность» щита как 1 удар
+            if(player.shield>0) player.shield = Math.max(0, player.shield-1);
             if(Math.random()<0.03) onAttemptDrop?.('kill');
           }
-          continue; // полностью игнорируем столкновение по бокам
+          continue;
         }
 
-        // Без защиты: либо прыжок-смерть моба, либо проигрыш
         if(player.vy>0 && player.y<m.y){
           m.alive=false;
           const mult = player.boots>0 ? 1.8 : 1.2;
@@ -303,45 +302,53 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
     }
 
-    // Пули
+    // Bullets
     bullets.forEach(b=>{ b.y += b.vy; });
     bullets = bullets.filter(b=> b.y > camY - 80);
 
-    // Пикапы
-    pickups.forEach(f=>{
+    // Pickups: only check collision when pickup is active and in (or near) screen
+    for(let i=0;i<pickups.length;i++){
+      const f = pickups[i];
+      if(!f || f.active===false) continue;
+      // only check if within vertical buffer of camera (prevent offscreen auto-collection)
+      if(f.y < camY - 120 || f.y > camY + H + 120) continue;
+
       if(player.x+player.w>f.x && player.x<f.x+f.w &&
          player.y+player.h>f.y && player.y<f.y+f.h){
+        // collect
         if(f.type==='boots')   player.boots   = 60*6;
         if(f.type==='jetpack') player.jetpack = 60*6;
-        if(f.type==='shield')  player.shield  = 3; // «прочность» щита — 3 контакта/прыжка
-        f.y=-9999;
+        if(f.type==='shield')  player.shield  = 3;
+        f.active = false;
+        f.y = -9999;
         particles.push({x:f.x+f.w/2,y:f.y,life:20,color:'#fff'});
         tg.HapticFeedback.impactOccurred('light');
       }
-    });
+    }
 
-    // Камера
+    // Camera
     const desired = player.y - H*0.58;
     if(desired < camY){ camY += (desired - camY)*0.12; }
 
-    // Порождаем новые платформы выше
+    // Spawn new rows
     while(plats.length && plats[plats.length-1].y > camY - 40) spawnNextRow();
 
-    // Счёт (метры)
+    // Score in meters
     if(player.y < minY) minY = player.y;
     const meters = Math.max(0, Math.floor((baseY - minY)/10));
     if(meters !== prevMeters){ prevMeters = meters; onScore?.(meters); }
 
-    // Падение вниз
+    // Fall-out
     if(player.y - camY > H+72){
       gameOver('fall');
     }
 
-    // Частицы
+    // Particles cleanup
     particles.forEach(p=>{ p.life--; });
     particles = particles.filter(p=> p.life>0);
   }
 
+  // ----- Robust gameOver handler -----
   function gameOver(reason){
     if(!running) return;
     running = false;
@@ -373,50 +380,57 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
     const offY = -camY;
 
-    // Подсветка колец для атмосферы
+    // decorative rings
     ctx.strokeStyle=`hsla(${(hue+80)%360},70%,60%,0.18)`; ctx.lineWidth=2;
     for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(W/2, (H/2)+offY + i*120, 120+i*30, 0, Math.PI*2); ctx.stroke(); }
 
-    // Платформы + пружины
+    // Platforms + attached springs
     plats.forEach(p=>{
       if(p.y+offY>H+34) return;
       drawPlatform(p.x, p.y+offY, p.w, p.h, p.type);
-      if(p.spring) drawSpring(p.spring.x, p.spring.y+offY, p.spring.w, p.spring.h);
+      if(p.spring){
+        const sx = p.x + p.spring.ox;
+        const sy = p.y + p.spring.oy + offY;
+        drawSpring(sx, sy, p.spring.w, p.spring.h);
+      }
     });
 
-    // Мобы
+    // Mobs
     mobs.forEach(m=>{
       if(!m.alive) return;
       const y=m.y+offY; if(y<-40||y>H+50) return;
       drawMob(m.x,y,m.w,m.h,m.type);
     });
 
-    // Пикапы
+    // Pickups (draw only active ones)
     pickups.forEach(f=>{
-      const y=f.y+offY; if(y<-40||y>H+50) return;
+      if(!f || f.active===false) return;
+      const y = f.y + offY;
+      if(y<-40||y>H+50) return;
       if(f.type==='boots')   drawPickup(f, Spr.boots, drawBootsFallback);
       else if(f.type==='jetpack') drawPickup(f, Spr.jetpack, drawJetpackFallback);
       else if(f.type==='shield')  drawPickup(f, Spr.shield, drawShieldFallback);
     });
 
-    // Пули
+    // Bullets
     bullets.forEach(b=>{
-      const y=b.y+offY; if(y<-20||y>H+20) return;
-      if(Spr.bullet?.complete) ctx.drawImage(Spr.bullet, b.x-3, y-6, 6, 12);
+      const y = b.y + offY;
+      if(y<-20||y>H+20) return;
+      if(Spr.bullet?.complete) ctx.drawImage(Spr.bullet, b.x-6/2, y-12/2, 6, 12);
       else { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(b.x, y, b.r, 0, Math.PI*2); ctx.fill(); }
     });
 
-    // Игрок
+    // Player (shield sphere and sprite)
     drawPlayer(player.x, player.y+offY);
 
-    // Частицы
+    // Particles
     particles.forEach(p=>{
       ctx.globalAlpha=Math.max(0,p.life/18);
       ctx.fillStyle=p.color; ctx.fillRect(p.x-2, p.y+offY-2, 4,4);
     }); ctx.globalAlpha=1;
   }
 
-  // ----- Draw helpers -----
+  // ----- Drawing helpers -----
   function roundRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y);
     ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
     ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
@@ -432,12 +446,11 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     if(img && img.complete){
       ctx.drawImage(img, x, y, w, h);
     } else {
-      // fallback
       let grad = ctx.createLinearGradient(x,y,x,y+h);
       if(type==='solid'){ grad.addColorStop(0,'#2c2f48'); grad.addColorStop(1,'#3b3f66'); }
-      else if(type==='move'){ grad.addColorStop(0,'#234457'); grad.addColorStop(1,'#2f6e86'); }
-      else if(type==='crumble'){ grad.addColorStop(0,'#52333a'); grad.addColorStop(1,'#8a4958'); }
-      else { grad.addColorStop(0,'#3c3052'); grad.addColorStop(1,'#5b4b8a'); }
+      else if(type==='move'){ grad.addColorStop(0,'#1e88b8'); grad.addColorStop(1,'#0f5f8a'); } // цельно синяя движущаяся платформа
+      else if(type==='crumble'){ grad.addColorStop(0,'#7a3b3b'); grad.addColorStop(1,'#b05a4a'); }
+      else { grad.addColorStop(0,'#5a2b2b'); grad.addColorStop(1,'#8b4b4b'); }
       ctx.fillStyle=grad; roundRect(x,y,w,h,3,true);
     }
   }
@@ -447,7 +460,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     if(img && img.complete){
       ctx.drawImage(img, x, y, w, h);
     } else {
-      // fallback: пружина
       ctx.strokeStyle='#fff'; ctx.lineWidth=2;
       ctx.beginPath();
       for(let i=0;i<5;i++){ ctx.moveTo(x+i*(w/5),y); ctx.lineTo(x+(i+1)*(w/5),y+h); }
@@ -477,16 +489,14 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function drawMob(x,y,w,h,type){
     const img = (type==='walker') ? Spr.mob_walker : Spr.mob_flyer;
     if(img && img.complete){
-      // лёгкая анимация покачивания
       ctx.save();
       const t = Math.sin(frame*0.12)*0.06;
       ctx.translate(x+w/2,y+h/2);
-      ctx.rotate(type==='flyer'? t : 0);
+      if(type==='flyer') ctx.rotate(t);
       ctx.translate(-w/2,-h/2);
       ctx.drawImage(img, 0, 0, w, h);
       ctx.restore();
     } else {
-      // fallback: цветные инопланетные «бобы»
       ctx.save();
       if(type==='flyer') ctx.rotate(Math.sin(frame*0.1)*0.1);
       ctx.translate(x,y);
@@ -499,12 +509,12 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   function drawPlayer(x,y){
-    // Сфера щита
+    // shield sphere
     if(player.shield>0){
       ctx.save();
       ctx.globalAlpha = 0.45;
-      ctx.beginPath();
       ctx.fillStyle = 'rgba(100,200,255,0.18)';
+      ctx.beginPath();
       ctx.arc(x+player.w/2, y+player.h/2, Math.max(player.w,player.h)*0.8, 0, Math.PI*2);
       ctx.fill();
       ctx.globalAlpha = 1;
@@ -516,7 +526,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       ctx.restore();
     }
 
-    // Сжатие/растяжение при прыжке
+    // stretch on jump
     const stretch = Math.max(0.88, Math.min(1.14, 1 - player.vy*0.03));
     ctx.save();
     ctx.translate(x+player.w/2, y+player.h/2);
@@ -535,7 +545,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
       ctx.restore();
     } else {
-      // fallback: боб с глазами
       ctx.fillStyle='#f5deb3';
       ctx.beginPath(); ctx.ellipse(x+player.w/2, y+player.h/2, player.w/2, player.h/2, 0, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle='#000';
