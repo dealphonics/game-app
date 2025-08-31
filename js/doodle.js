@@ -124,19 +124,18 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     return 'solid';
   }
 
-  // makePlat: пружина привязываем как offset (ox/oy) относительно платформы
+    // makePlat: пружина привязываем как offset (ox/oy) относительно платформы
   function makePlat(x, y, w, h, type){
     const p = {x, y, w, h, type, vx:0, life:Infinity, spring:null};
     if(type==='move') p.vx = randSign()*rand(0.5,1.0);
     if(type==='disappear') p.life = 2;
     if(type==='crumble')   p.life = 1;
 
-    // Пружина всегда НА платформе (маленькая)
-    if(Math.random()<0.22){
+    // Пружина появляется реже (10% вместо 22%)
+    if(Math.random()<0.10){
       const sw = 20, sh = 12;
       const sx = rand(6, Math.max(6, w - sw - 6));
-      const sy = -sh + 2; // oy relative to platform.y
-      // store relative offsets
+      const sy = -sh + 2;
       p.spring = { ox: sx, oy: sy, w: sw, h: sh, type: 'spring' };
     }
     return p;
@@ -148,8 +147,8 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     const p = makePlat(rand(20, W-84), yTop, 64, 10, pickPlatType());
     plats.push(p);
 
-    // pickups плавают в воздухе (как раньше), но будут проверяться на видимость перед сбором
-    if(Math.random()<0.22){
+    // pickups реже (8% вместо 22%)
+    if(Math.random()<0.08){
       const kindRoll = Math.random();
       const fx = rand(10, W-42);
       const fy = yTop - rand(36, 64);
@@ -158,7 +157,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       else pickups.push({x:fx,y:fy,w:30,h:30,type:'shield', active:true});
     }
 
-    // мобы реже
+    // мобы остаются редкими (10%)
     if(Math.random()<0.10){
       const t = Math.random();
       if(t<0.55) mobs.push({x:rand(10,W-34), y:yTop-28, w:32, h:28, type:'walker', vx:randSign()*rand(0.6,1.0), vy:0, alive:true, phase:Math.random()*6.28});
