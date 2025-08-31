@@ -133,13 +133,15 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
     }
 
-    // мобы
-    mobs.forEach(m=>{
-      if(!m.alive) return;
+    // мобы (исправленный цикл!)
+    for (let i=0; i<mobs.length; i++) {
+      const m = mobs[i];
+      if(!m.alive) continue;
+
       if(m.type==='walker'){
         m.x+=m.vx; m.y+=Math.sin(frame*0.1+m.phase)*0.5;
         if(m.x<0||m.x+m.w>W) m.vx*=-1;
-      }else{
+      } else {
         m.ph+=0.04;
         m.x+=m.vx;
         m.y+= Math.sin(m.ph)*1.2 + m.vy;
@@ -150,28 +152,25 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
         if(b.x>m.x && b.x<m.x+m.w && b.y>m.y && b.y<m.y+m.h){
           m.alive=false; b.y=-9999;
           particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#f66'});
-          tg.HapticFeedback.impactOccurred('medium');
-          if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
         }
       }
 
-      if(m.alive &&
-         player.x+player.w>m.x && player.x<m.x+m.w &&
+      if(player.x+player.w>m.x && player.x<m.x+m.w &&
          player.y+player.h>m.y && player.y<m.y+m.h){
+
         if(player.jetpack>0 || player.boots>0 || player.shield>0 || player.invul>0){
-          // при бонусах мобы не мешают
-          return;
+          continue; // игнорируем
         }
+
         if(player.vy>0 && player.y<m.y){
-          m.alive=false; player.vy = player.jump*(player.boots>0?1.8:1.2);
+          m.alive=false;
+          player.vy = player.jump*(player.boots>0?1.8:1.2);
           particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#6f6'});
-          tg.HapticFeedback.impactOccurred('medium');
-          if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
-        }else{
-          running=false;
+        } else {
+          running=false; // конец игры
         }
       }
-    });
+    }
 
     bullets.forEach(b=>{ b.y += b.vy; });
     bullets = bullets.filter(b=> b.y > camY - 60);
@@ -245,7 +244,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     mobs.forEach(m=>{
       if(!m.alive) return;
       const y=m.y+offY; if(y<-30||y>H+30) return;
-      drawMob(m,x,y,m.w,m.h,m.type);
+      drawMob(m.x,y,m.w,m.h,m.type);
     });
 
     pickups.forEach(f=>{
@@ -319,12 +318,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     ctx.restore();
   }
 
-  function loop(){
-    if(running){
-      update(); draw();
-      raf=requestAnimationFrame(loop);
-    }
-  }
+  function loop(){ if(running){ update(); draw(); raf=requestAnimationFrame(loop); } }
 
   return {
     start(){ reset(); running=true; enableTilt(); loop(); },
