@@ -1,14 +1,15 @@
-// Doodle Jump • simplified death (no falling anim), moderate tilt, stronger jetpack, invul while gear
+// Doodle Jump • улучшенная версия
 window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
   let running=false, raf=0;
   let camY=0, prevMeters=0, baseY=0, minY=0;
+  let frame=0;
 
   const player = {
     x: W/2, y: H-100, w: 28, h: 36,
-    vx: 0, vy: 0, baseSpeed: 3.2, jump: -9.8,
+    vx: 0, vy: 0, baseSpeed: 2.6, jump: -9.8,
     dir: 1,
     invul: 0, shield: 0, jetpack: 0, boots: 0, shotCooldown: 0
   };
@@ -26,7 +27,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       DeviceOrientationEvent.requestPermission()
         .then(state=>{
           if(state==='granted'){ window.addEventListener('deviceorientation', onTilt, {passive:true}); tiltEnabled=true; }
-        }).catch(()=>{ /* ignore */ });
+        }).catch(()=>{});
     }else{
       window.addEventListener('deviceorientation', onTilt, {passive:true});
       tiltEnabled=true;
@@ -35,7 +36,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function onTilt(e){
     if(e && typeof e.gamma==='number'){
       const g = Math.max(-20, Math.min(20, e.gamma));
-      tiltX = g / 15; // умеренно
+      tiltX = g / 15;
     }
   }
 
@@ -51,7 +52,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   });
 
   function reset(){
-    camY=0; prevMeters=0;
+    camY=0; prevMeters=0; frame=0;
     player.x=W/2; player.y=H-100; player.vx=0; player.vy=0;
     player.shield=0; player.jetpack=0; player.boots=0; player.shotCooldown=0; player.invul=0;
 
@@ -71,19 +72,20 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
   function spawnMob(y){
     const t = Math.random();
-    if(t<0.5) mobs.push({x:rand(10,W-30), y, w:26, h:22, type:'walker', vx:randSign()*rand(0.6,1.2), vy:0, alive:true});
-    else      mobs.push({x:rand(10,W-30), y, w:22, h:20, type:'flyer',  vx:randSign()*rand(0.5,1.0), vy:rand(-0.35,0.35), alive:true, ph:Math.random()*6.28});
+    if(t<0.5) mobs.push({x:rand(10,W-30), y, w:30, h:28, type:'walker', vx:randSign()*rand(0.6,1.0), vy:0, alive:true, phase:Math.random()*6.28});
+    else      mobs.push({x:rand(10,W-30), y, w:26, h:24, type:'flyer',  vx:randSign()*rand(0.5,1.0), vy:rand(-0.35,0.35), alive:true, ph:Math.random()*6.28});
   }
   function spawnPickup(y){
     const r=Math.random();
-    if(r<0.05)      pickups.push({x:rand(10,W-20), y, w:20,h:18, type:'boots'});
-    else if(r<0.08) pickups.push({x:rand(10,W-20), y, w:18,h:22, type:'jetpack'});
-    else if(r<0.11) pickups.push({x:rand(10,W-20), y, w:20,h:20, type:'shield'});
+    if(r<0.05)      pickups.push({x:rand(10,W-28), y, w:32,h:32, type:'boots'});
+    else if(r<0.08) pickups.push({x:rand(10,W-28), y, w:32,h:32, type:'jetpack'});
+    else if(r<0.11) pickups.push({x:rand(10,W-28), y, w:32,h:32, type:'shield'});
+    else if(r<0.14) pickups.push({x:rand(10,W-28), y, w:28,h:16, type:'spring'});
   }
 
   function shoot(){
     if(player.shotCooldown>0) return;
-    bullets.push({x:player.x+player.w/2-2, y:player.y+2, vy:-8.6, r:3});
+    bullets.push({x:player.x+player.w/2-2, y:player.y+2, vy:-12, r:3});
     player.shotCooldown=10;
     tg.HapticFeedback.impactOccurred('light');
   }
@@ -92,16 +94,15 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   function randSign(){ return Math.random()<0.5?-1:1; }
 
   function update(){
-    // tilt
+    frame++;
+
     if(tiltEnabled){
-      const target = tiltX * player.baseSpeed * 2.6;
+      const target = tiltX * player.baseSpeed * 1.6;
       player.vx += (target - player.vx)*0.4;
       if(Math.abs(player.vx)<0.06) player.vx=0;
     }
     if(player.shotCooldown>0) player.shotCooldown--;
     if(player.invul>0) player.invul--;
-
-    const gearInvul = (player.jetpack>0 || player.boots>0);
 
     if(player.jetpack>0){
       player.vy -= 0.28; if(player.vy < -7.2) player.vy = -7.2;
@@ -116,6 +117,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
     plats.forEach(p=>{ if(p.type==='move'){ p.x+=p.vx; if(p.x<0||p.x+p.w>W) p.vx*=-1; } });
 
+    // коллизии с платформами
     if(player.vy>0){
       for(const p of plats){
         if(player.x+player.w>p.x && player.x<p.x+p.w &&
@@ -131,10 +133,18 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       }
     }
 
+    // мобы
     mobs.forEach(m=>{
       if(!m.alive) return;
-      if(m.type==='walker'){ m.x+=m.vx; if(m.x<0||m.x+m.w>W) m.vx*=-1; }
-      else{ m.ph+=0.04; m.x+=m.vx; m.y+= Math.sin(m.ph)*0.9 + m.vy; if(m.x<0||m.x+m.w>W) m.vx*=-1; }
+      if(m.type==='walker'){
+        m.x+=m.vx; m.y+=Math.sin(frame*0.1+m.phase)*0.5;
+        if(m.x<0||m.x+m.w>W) m.vx*=-1;
+      }else{
+        m.ph+=0.04;
+        m.x+=m.vx;
+        m.y+= Math.sin(m.ph)*1.2 + m.vy;
+        if(m.x<0||m.x+m.w>W) m.vx*=-1;
+      }
 
       for(const b of bullets){
         if(b.x>m.x && b.x<m.x+m.w && b.y>m.y && b.y<m.y+m.h){
@@ -148,20 +158,17 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       if(m.alive &&
          player.x+player.w>m.x && player.x<m.x+m.w &&
          player.y+player.h>m.y && player.y<m.y+m.h){
+        if(player.jetpack>0 || player.boots>0 || player.shield>0 || player.invul>0){
+          // при бонусах мобы не мешают
+          return;
+        }
         if(player.vy>0 && player.y<m.y){
           m.alive=false; player.vy = player.jump*(player.boots>0?1.8:1.2);
           particles.push({x:m.x+m.w/2,y:m.y,life:28,color:'#6f6'});
           tg.HapticFeedback.impactOccurred('medium');
           if(Math.random()<0.03 && typeof onAttemptDrop==='function') onAttemptDrop('kill');
         }else{
-          if(gearInvul || player.invul>0 || player.shield>0){
-            if(player.shield>0){ player.shield=0; player.invul=45; } else { player.invul = Math.max(player.invul, 30); }
-            player.vy = -3;
-            tg.HapticFeedback.impactOccurred('light');
-          }else{
-            // смерть без анимации — сразу гасим игру
-            running=false;
-          }
+          running=false;
         }
       }
     });
@@ -175,6 +182,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
         if(f.type==='boots')   player.boots   = 60*6;
         if(f.type==='jetpack') player.jetpack = 60*6;
         if(f.type==='shield')  player.shield  = 1;
+        if(f.type==='spring')  player.vy = player.jump*2.5;
         f.y=-9999;
         particles.push({x:f.x+f.w/2,y:f.y,life:20,color:'#fff'});
         tg.HapticFeedback.impactOccurred('light');
@@ -188,7 +196,7 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       const yTop = plats[plats.length-1].y - rand(56,64);
       plats.push(makePlat(yTop));
       if(Math.random()<0.22) spawnPickup(yTop-40);
-      if(Math.random()<0.25) spawnMob(yTop-30);
+      if(Math.random()<0.12) spawnMob(yTop-30);
       if(plats.length>54) plats.splice(0,1);
     }
 
@@ -197,7 +205,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     if(meters !== prevMeters){ prevMeters = meters; onScore?.(meters); }
 
     if(player.y - camY > H+72){
-      // сразу оверлей через колбэк
       running=false;
       onGameOver?.(prevMeters);
     }
@@ -225,9 +232,6 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
 
     const offY = -camY;
 
-    ctx.strokeStyle=`hsla(${(hue+80)%360},70%,60%,0.2)`; ctx.lineWidth=2;
-    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(W/2, (H/2)+offY + i*120, 120+i*30, 0, Math.PI*2); ctx.stroke(); }
-
     plats.forEach(p=>{
       if(p.y+offY>H+20) return;
       let grad = ctx.createLinearGradient(p.x, p.y+offY, p.x, p.y+offY+p.h);
@@ -236,25 +240,24 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
       else if(p.type==='crumble'){ grad.addColorStop(0,'#52333a'); grad.addColorStop(1,'#8a4958'); }
       else { grad.addColorStop(0,'#3c3052'); grad.addColorStop(1,'#5b4b8a'); }
       ctx.fillStyle=grad; roundRect(p.x, p.y+offY, p.w, p.h, 3, true);
-      ctx.strokeStyle='rgba(255,255,255,0.08)'; roundRect(p.x, p.y+offY, p.w, p.h, 3, false);
     });
 
     mobs.forEach(m=>{
       if(!m.alive) return;
       const y=m.y+offY; if(y<-30||y>H+30) return;
-      drawMob(m.x,y,m.w,m.h, m.type==='walker'?'#ff6b6b':'#45b7d1');
+      drawMob(m,x,y,m.w,m.h,m.type);
     });
 
     pickups.forEach(f=>{
       const y=f.y+offY; if(y<-30||y>H+30) return;
       if(f.type==='boots')   drawBoots(f.x,y,f.w,f.h);
       else if(f.type==='jetpack') drawJetpack(f.x,y,f.w,f.h);
-      else drawShield(f.x,y,f.w,f.h);
+      else if(f.type==='shield')  drawShield(f.x,y,f.w,f.h);
+      else if(f.type==='spring')  drawSpring(f.x,y,f.w,f.h);
     });
 
     bullets.forEach(b=>{
       ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(b.x, b.y+offY, b.r, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(b.x-1, b.y+offY+2, 2, 6);
     });
 
     drawPlayer(player.x, player.y+offY);
@@ -270,51 +273,61 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
     ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
     if(fill) ctx.fill(); else ctx.stroke();
   }
-  function drawMob(x,y,w,h,base){
-    const g = ctx.createLinearGradient(x,y,x,y+h);
-    g.addColorStop(0, base); g.addColorStop(1, '#fff5');
-    ctx.fillStyle=g; roundRect(x,y,w,h,5,true);
+
+  function drawMob(x,y,w,h,type){
+    ctx.save();
+    ctx.translate(x+w/2,y+h/2);
+    if(type==='flyer') ctx.rotate(Math.sin(frame*0.1)*0.1);
+    ctx.translate(-w/2,-h/2);
+
+    ctx.fillStyle= type==='walker' ? '#ff6b6b' : '#45b7d1';
+    ctx.beginPath(); ctx.ellipse(w/2,h/2,w/2,h/2,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#000';
-    ctx.beginPath(); ctx.arc(x+6,y+6,2,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x+w-6,y+6,2,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#000'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(x+5,y+h-7); ctx.lineTo(x+w-5,y+h-7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(8,10,3,0,Math.PI*2); ctx.arc(w-8,10,3,0,Math.PI*2); ctx.fill();
+    ctx.restore();
   }
+
   function drawBoots(x,y,w,h){
-    ctx.fillStyle='#f5d66d'; roundRect(x, y+h-6, w, 6, 3, true);
-    ctx.fillStyle='#f1c40f'; roundRect(x+3, y+2, w-6, h-8, 4, true);
-    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(x+4,y+4, w-10, 2);
+    ctx.fillStyle='#f5d66d'; roundRect(x, y+h-10, w, 10, 3, true);
   }
   function drawJetpack(x,y,w,h){
     ctx.fillStyle='#ff8e53'; roundRect(x+2, y+2, w-4, h-8, 4, true);
     ctx.fillStyle='#c0392b'; roundRect(x+4, y+h-8, 6, 6, 2, true); roundRect(x+w-10, y+h-8, 6, 6, 2, true);
-    ctx.fillStyle='#fff'; ctx.fillRect(x+w/2-2, y+6, 4, 6);
   }
   function drawShield(x,y,w,h){
-    ctx.strokeStyle='rgba(78,205,196,0.9)'; ctx.lineWidth=2;
+    ctx.strokeStyle='rgba(78,205,196,0.9)'; ctx.lineWidth=3;
     roundRect(x+2,y+2,w-4,h-4,6,false);
   }
+  function drawSpring(x,y,w,h){
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+    ctx.beginPath();
+    for(let i=0;i<5;i++){ ctx.moveTo(x+i*(w/5),y); ctx.lineTo(x+(i+1)*(w/5),y+h); }
+    ctx.stroke();
+  }
+
   function drawPlayer(x,y){
-    ctx.fillStyle='#eceff4'; roundRect(x, y, player.w, player.h, 6, true);
-    ctx.fillStyle='#45b7d1'; roundRect(x+5, y+5, player.w-10, 9, 4, true);
-    ctx.fillStyle='#777'; ctx.fillRect(x+5, y+player.h-4, 6, 4); ctx.fillRect(x+player.w-11, y+player.h-4, 6, 4);
-    if(player.jetpack>0){ ctx.fillStyle='rgba(255,150,0,0.8)'; ctx.fillRect(x+player.w/2-2, y+player.h, 4, 12); }
-    if(player.shield>0 || player.invul>0 || player.jetpack>0 || player.boots>0){
-      ctx.strokeStyle='rgba(78,205,196,0.9)'; ctx.lineWidth=2; roundRect(x-2, y-2, player.w+4, player.h+4, 8, false);
-    }
+    ctx.save();
+    const stretch = Math.max(0.85, Math.min(1.15, 1 - player.vy*0.03));
+    ctx.translate(x+player.w/2, y+player.h/2);
+    ctx.scale(1, stretch);
+    ctx.translate(-(x+player.w/2), -(y+player.h/2));
+
+    ctx.fillStyle='#f5deb3';
+    ctx.beginPath(); ctx.ellipse(x+player.w/2, y+player.h/2, player.w/2, player.h/2, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(x+9, y+12, 3, 0, Math.PI*2); ctx.arc(x+player.w-9, y+12, 3, 0, Math.PI*2); ctx.fill();
+
+    ctx.restore();
   }
 
   function loop(){
-    if(!running){
-      onGameOver?.(prevMeters);
-      return;
+    if(running){
+      update(); draw();
+      raf=requestAnimationFrame(loop);
     }
-    update(); draw();
-    raf = requestAnimationFrame(loop);
   }
 
-  function start(){ stop(); reset(); enableTilt(); running=true; loop(); }
-  function stop(){ running=false; cancelAnimationFrame(raf); }
-
-  return { start, stop, pause:()=>{}, resume:()=>{}, enableTilt };
+  return {
+    start(){ reset(); running=true; enableTilt(); loop(); },
+    stop(){ running=false; cancelAnimationFrame(raf); }
+  }
 };
