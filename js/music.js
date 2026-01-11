@@ -7,25 +7,20 @@ window.Music = (function(){
   ];
 
   const albums = {
-    karmageddon: {
-      title:'Karmageddon', artist:'Kizaru',
+    ncs: {
+      title:'Best Of NCS', artist:'NCS',
       tracks: [
-        {id:'k_dezhavu',           title:'Дежавю',             artist:'Kizaru', rarity:'legendary', path:'karmageddon/dezhavu.mp3'},
-        {id:'k_top_dog',           title:'Top Dog',            artist:'Kizaru', rarity:'common',    path:'karmageddon/top_dog.mp3'},
-        {id:'k_vodopad',           title:'Водопад',            artist:'Kizaru', rarity:'rare',      path:'karmageddon/vodopad.mp3'},
-        {id:'k_derzhu_raion',      title:'Держу район',        artist:'Kizaru', rarity:'epic',      path:'karmageddon/derzhu_raion.mp3'},
-        {id:'k_vse_chto_ugodno',   title:'Все что угодно',     artist:'Kizaru', rarity:'common',    path:'karmageddon/vse_chto_ugodno.mp3'},
-        {id:'k_money_long',        title:'MONEY LONG',         artist:'Kizaru', rarity:'legendary', path:'karmageddon/money_long.mp3'},
-        {id:'k_deep_end',          title:'Deep End',           artist:'Kizaru', rarity:'epic',      path:'karmageddon/deep_end.mp3'},
-        {id:'k_sim_salabim',       title:'Сим салабим',        artist:'Kizaru', rarity:'common',    path:'karmageddon/sim_salabim.mp3'},
-        {id:'k_smooth_operator',   title:'Smooth operator',    artist:'Kizaru', rarity:'rare',      path:'karmageddon/smooth_operator.mp3'},
-        {id:'k_psihopat_lunatik',  title:'Психопат-лунатик',   artist:'Kizaru', rarity:'epic',      path:'karmageddon/psihopat_lunatik.mp3'}
+        {id:'ncs_invincible',           title:'DEAF KEV - iNVINCIBLE',             artist:'NCS', rarity:'legendary', path:'ncscollection/invincible.mp3'},
+        {id:'ncs_blank',           title:'Disfigure - Blank',            artist:'NCS', rarity:'legendary',    path:'ncscollection/blank.mp3'},
+        {id:'ncs_freefall',           title:'Audioscribe - Free Fall',            artist:'NCS', rarity:'epic',      path:'ncscollection/freefall.mp3'},
+        {id:'ncs_staywithme',      title:'Mendum - Stay With Me',        artist:'NCS', rarity:'rare',      path:'ncscollection/staywithme.mp3'},
+        {id:'ncs_link',   title:'Jim Yosef - Link',     artist:'NCS', rarity:'common',    path:'ncscollection/link.mp3'}
       ]
     },
-    psychi: {
-      title:'Психи попадают в топ', artist:'Макс Корж',
+    monstercat: {
+      title:'Best Of Monstercat', artist:'Monstercat',
       tracks: [
-        {id:'p_snadobye',          title:'Снадобье',                 artist:'Макс Корж', rarity:'epic',      path:'psychi/snadobye.mp3'},
+        {id:'mc_snadobye',          title:'Снадобье',                 artist:'Макс Корж', rarity:'epic',      path:'psychi/snadobye.mp3'},
         {id:'p_afgan',             title:'Афган',                    artist:'Макс Корж', rarity:'legendary', path:'psychi/afgan.mp3'},
         {id:'p_sozhzheny',         title:'Сожжены',                  artist:'Макс Корж', rarity:'epic',      path:'psychi/sozhzheny.mp3'},
         {id:'p_luchshiy_vaib',     title:'Лучший вайб',              artist:'Макс Корж', rarity:'rare',      path:'psychi/luchshiy_vaib.mp3'},
