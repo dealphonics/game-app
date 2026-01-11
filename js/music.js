@@ -30,7 +30,7 @@ window.Music = (function(){
   };
 
   function renderTracks(targetEl, albumKey, unlocked, onPlay){
-    const album = albums[albumKey] || albums.ncs; albums.monstercat;
+    const album = albums[albumKey] || albums.ncs;
     targetEl.innerHTML = '';
     album.tracks.forEach(track=>{
       const isUnlocked = unlocked.includes(track.id);
