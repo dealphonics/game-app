@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Soundkeeper • Stabilize</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">🎵 Soundkeeper</div>
+      <div class="tagline">Играй и открывай музыку</div>
+    </header>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-value" id="statScore">0</div>
+        <div class="stat-label">Очки</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statTracks">0/20</div>
+        <div class="stat-label">Треки</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statLevel">1</div>
+        <div class="stat-label">Уровень</div>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="btnPlay" class="btn primary">🎯 Играть (Doodle Jump)</button>
+      <button id="btnPlayBB" class="btn">🧊 Играть (Block Blast)</button>
+      <button id="btnMusic" class="btn accent">🎵 Моя коллекция</button>
+    </section>
+  </div>
+
+  <!-- Game modal (Doodle Jump) -->
+  <div id="gameModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🎯 Doodle Jump</div>
+        <button class="modal-close" data-close="gameModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="game-info">
+          <div><b>Высота:</b> <span id="gameScore">0</span> м</div>
+          <div><b>Время:</b> <span id="gameTime">0:00</span></div>
+        </div>
+        <div class="game-frame">
+          <canvas id="gameCanvas" width="320" height="420"></canvas>
+
+          <!-- Окно завершения игры -->
+          <div id="gameOverOverlay" class="gameover-overlay" style="display:none;">
+            <div class="gameover-panel">
+              <div class="go-title">Игра окончена</div>
+              <div class="go-score">Высота: <span id="goHeight">0</span> м</div>
+              <div class="go-best">Рекорд: <span id="goBest">0</span> м</div>
+              <button id="btnPlayAgain" class="btn primary">🔄 Играть снова</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Block Blast modal -->
+  <div id="bbModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🧊 Block Blast</div>
+        <button class="modal-close" data-close="bbModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="game-info">
+          <div><b>Очки:</b> <span id="bbScore">0</span></div>
+          <div><b>Рекорд:</b> <span id="bbBestTop">0</span></div>
+        </div>
+        <div class="game-frame">
+          <canvas id="bbCanvas" width="360" height="520"></canvas>
+
+          <!-- Окно завершения игры -->
+          <div id="bbOverOverlay" class="gameover-overlay" style="display:none;">
+            <div class="gameover-panel">
+              <div class="go-title">Игра окончена</div>
+              <div class="go-score">Очки: <span id="bbGoScore">0</span></div>
+              <div class="go-best">Рекорд: <span id="bbGoBest">0</span></div>
+              <button id="btnBBPlayAgain" class="btn primary">🔄 Играть снова</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Music modal -->
+  <div id="musicModal" class="modal" style="display:none">
+    <div class="modal-content solid">
+      <div class="modal-header">
+        <div class="modal-title">🎵 Моя коллекция</div>
+        <button class="modal-close" data-close="musicModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="album-picker">
+          <input id="albumSearch" type="search" placeholder="Найти альбом (Best Of NCS / Best Of Monstercat)" list="albumsData" />
+          <datalist id="albumsData">
+            <option value="Best Of NCS"></option>
+            <option value="Best Of Monstercat"></option>
+          </datalist>
+          <div id="searchResults" class="search-results" style="display:none"></div>
+        </div>
+        <div id="tracksList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mini Player -->
+  <div id="playerBar" class="player-bar">
+    <div class="player-meta">
+      <div id="playerTitle" class="player-title">Нет трека</div>
+      <div id="playerArtist" class="player-artist">—</div>
+      <div class="player-progress">
+        <div id="playerProgressFill" class="player-progress-fill"></div>
+      </div>
+      <div class="player-time">
+        <span id="playerTimeCur">0:00</span>
+        <span id="playerTimeDur">0:00</span>
+      </div>
+    </div>
+    <div class="player-controls">
+      <button id="playerPrev" class="pbtn" title="Предыдущий">⏮️</button>
+      <button id="playerPlay" class="pbtn" title="Воспроизвести/Пауза">▶️</button>
+      <button id="playerNext" class="pbtn" title="Следующий">⏭️</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./js/tg.js"></script>
+  <script src="./js/doodle.js"></script>
+  <script src="./js/blockblast.js"></script>
+  <script src="./js/music.js"></script>
+  <script src="./js/main.js"></script>
+</body>
+</html>
