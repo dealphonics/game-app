@@ -125,41 +125,39 @@ window.Doodle = function(canvas, onScore, onAttemptDrop, onGameOver){
   }
 
   // makePlat: пружина привязана к платформе
-  function makePlat(x, y, w, h, type, canSpawnPickup = true){
-    const p = {x, y, w, h, type, vx:0, life:Infinity, spring:null};
-    if(type==='move') p.vx = randSign()*rand(0.5,1.0);
-    if(type==='disappear') p.life = 2;
-    if(type==='crumble')   p.life = 1;
+function makePlat(x, y, w, h, type, canSpawnPickup = true){
+  const p = {x, y, w, h, type, vx:0, life:Infinity, spring:null};
+  if(type==='move') p.vx = randSign()*rand(0.5,1.0);
+  if(type==='disappear') p.life = 2;
+  if(type==='crumble')   p.life = 1;
 
-    // Пружина на платформе
-    if(Math.random()<0.22){
-      const sw = 20, sh = 12;
-      const sx = rand(6, Math.max(6, w - sw - 6));
-      const sy = -sh + 2;
-      p.spring = { ox: sx, oy: sy, w: sw, h: sh, type: 'spring' };
-    }
-
-    // ФИКС: Пикапы спавним ТОЛЬКО для новых платформ (не стартовых)
-    // и привязываем к платформе как offset
-    if(canSpawnPickup && Math.random() < 0.18){
-      const kindRoll = Math.random();
-      let pickupType = 'shield';
-      if(kindRoll < 0.34) pickupType = 'boots';
-      else if(kindRoll < 0.67) pickupType = 'jetpack';
-      
-      // Пикап парит НАД платформой (относительные координаты)
-      p.pickup = {
-        ox: rand(0, w - 30),  // offset X относительно платформы
-        oy: -rand(40, 70),    // offset Y (выше платформы)
-        w: 30,
-        h: 30,
-        type: pickupType,
-        collected: false
-      };
-    }
-
-    return p;
+  // Пружина на платформе — было 0.22, стало 0.08 (8%)
+  if(Math.random() < 0.08){
+    const sw = 20, sh = 12;
+    const sx = rand(6, Math.max(6, w - sw - 6));
+    const sy = -sh + 2;
+    p.spring = { ox: sx, oy: sy, w: sw, h: sh, type: 'spring' };
   }
+
+  // Пикапы — было 0.18, стало 0.04 (4%)
+  if(canSpawnPickup && Math.random() < 0.04){
+    const kindRoll = Math.random();
+    let pickupType = 'shield';
+    if(kindRoll < 0.34) pickupType = 'boots';
+    else if(kindRoll < 0.67) pickupType = 'jetpack';
+    
+    p.pickup = {
+      ox: rand(0, w - 30),
+      oy: -rand(40, 70),
+      w: 30,
+      h: 30,
+      type: pickupType,
+      collected: false
+    };
+  }
+
+  return p;
+}
 
   function spawnNextRow(){
     const top = plats[plats.length-1];
