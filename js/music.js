@@ -11,31 +11,26 @@ window.Music = (function(){
       title:'Best Of NCS', artist:'NCS',
       tracks: [
         {id:'ncs_invincible',           title:'DEAF KEV - iNVINCIBLE',             artist:'NCS', rarity:'legendary', path:'ncscollection/invincible.mp3'},
-        {id:'ncs_blank',           title:'Disfigure - Blank',            artist:'NCS', rarity:'legendary',    path:'ncscollection/blank.mp3'},
-        {id:'ncs_freefall',           title:'Audioscribe - Free Fall',            artist:'NCS', rarity:'epic',      path:'ncscollection/freefall.mp3'},
-        {id:'ncs_staywithme',      title:'Mendum - Stay With Me',        artist:'NCS', rarity:'rare',      path:'ncscollection/staywithme.mp3'},
+        {id:'ncs_blank',           title:'Disfigure - Blank',            artist:'NCS', rarity:'epic',    path:'ncscollection/blank.mp3'},
+        {id:'ncs_freefall',           title:'Audioscribe - Free Fall',            artist:'NCS', rarity:'rare',      path:'ncscollection/freefall.mp3'},
+        {id:'ncs_staywithme',      title:'Mendum - Stay With Me',        artist:'NCS', rarity:'common',      path:'ncscollection/staywithme.mp3'},
         {id:'ncs_link',   title:'Jim Yosef - Link',     artist:'NCS', rarity:'common',    path:'ncscollection/link.mp3'}
       ]
     },
     monstercat: {
       title:'Best Of Monstercat', artist:'Monstercat',
       tracks: [
-        {id:'mc_snadobye',          title:'Снадобье',                 artist:'Макс Корж', rarity:'epic',      path:'psychi/snadobye.mp3'},
-        {id:'p_afgan',             title:'Афган',                    artist:'Макс Корж', rarity:'legendary', path:'psychi/afgan.mp3'},
-        {id:'p_sozhzheny',         title:'Сожжены',                  artist:'Макс Корж', rarity:'epic',      path:'psychi/sozhzheny.mp3'},
-        {id:'p_luchshiy_vaib',     title:'Лучший вайб',              artist:'Макс Корж', rarity:'rare',      path:'psychi/luchshiy_vaib.mp3'},
-        {id:'p_young_haze',        title:'Young haze',               artist:'Макс Корж', rarity:'common',    path:'psychi/young_haze.mp3'},
-        {id:'p_ulitsy_bez_fonarey',title:'Улицы без фонарей',        artist:'Макс Корж', rarity:'rare',      path:'psychi/ulitsy_bez_fonarey.mp3'},
-        {id:'p_tak_i_znal',        title:'Так и знал',               artist:'Макс Корж', rarity:'rare',      path:'psychi/tak_i_znal.mp3'},
-        {id:'p_na_domu',           title:'На дому',                  artist:'Макс Корж', rarity:'rare',      path:'psychi/na_domu.mp3'},
-        {id:'p_animals',           title:'Animals',                  artist:'Макс Корж', rarity:'common',    path:'psychi/animals.mp3'},
-        {id:'p_zapravka',          title:'Заправка',                 artist:'Макс Корж', rarity:'common',    path:'psychi/zapravka.mp3'}
+        {id:'mc_flight',          title:'Tristam & Braken - Flight',                 artist:'Monstercat', rarity:'legendary',      path:'monstercatcollection/flight.mp3'},
+        {id:'mc_crabrave',             title:'Noisestorm - Crab Rave',                    artist:'Monstercat', rarity:'common', path:'monstercatcollection/crabrave.mp3'},
+        {id:'mc_overkill',         title:'RIOT - Overkill',                  artist:'Monstercat', rarity:'epic',      path:'monstercatcollection/overkill.mp3'},
+        {id:'mc_japan',     title:'Throttle - Japan',              artist:'Monstercat', rarity:'commom',      path:'monstercatcollection/japan.mp3'},
+        {id:'mc_stronger',        title:'Stonebank & EMEL - Stronger',               artist:'Monstercat', rarity:'rare',    path:'monstercatcollection/stronger.mp3'}
       ]
     }
   };
 
   function renderTracks(targetEl, albumKey, unlocked, onPlay){
-    const album = albums[albumKey] || albums.karmageddon;
+    const album = albums[albumKey] || albums.ncs; albums.monstercat;
     targetEl.innerHTML = '';
     album.tracks.forEach(track=>{
       const isUnlocked = unlocked.includes(track.id);
