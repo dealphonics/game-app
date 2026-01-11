@@ -512,45 +512,80 @@ function makePlat(x, y, w, h, type, canSpawnPickup = true){
     }
   }
 
-  // ФИКС: Новая функция для рисования пикапов
-  function drawPickupItem(x, y, w, h, type){
-    let img = null;
-    if(type === 'boots') img = Spr.boots;
-    else if(type === 'jetpack') img = Spr.jetpack;
-    else if(type === 'shield') img = Spr.shield;
+  // Рисование пикапов — только программная графика (без спрайтов с белым фоном)
+function drawPickupItem(x, y, w, h, type){
+  ctx.save();
+  
+  // Свечение-подложка
+  const glowColor = type === 'boots' ? '#ffeb3b' : type === 'jetpack' ? '#ff5722' : '#00bcd4';
+  ctx.globalAlpha = 0.3 + Math.sin(frame * 0.1) * 0.15;
+  ctx.fillStyle = glowColor;
+  ctx.beginPath();
+  ctx.arc(x + w/2, y + h/2, w/2 + 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  if(type === 'boots'){
+    // Ботинок-пружина
+    ctx.fillStyle = '#8B4513';
+    roundRect(x + 4, y + h - 14, w - 8, 12, 3, true);
+    ctx.fillStyle = '#D2691E';
+    roundRect(x + 6, y + h - 20, w - 12, 8, 2, true);
+    // Пружина снизу
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y + h - 2);
+    ctx.lineTo(x + w - 8, y + h - 2);
+    ctx.stroke();
     
-    if(img && img.complete){
-      ctx.drawImage(img, x, y, w, h);
-    } else {
-      // Fallback рисование
-      ctx.save();
-      if(type === 'boots'){
-        ctx.fillStyle = '#8B4513';
-        roundRect(x + 2, y + h - 16, w - 4, 14, 3, true);
-        ctx.fillStyle = '#D2691E';
-        roundRect(x + 4, y + h - 22, w - 8, 10, 2, true);
-      } else if(type === 'jetpack'){
-        ctx.fillStyle = '#ff6b35';
-        roundRect(x + 4, y + 4, w - 8, h - 12, 4, true);
-        ctx.fillStyle = '#ff4500';
-        ctx.fillRect(x + 6, y + h - 10, 6, 8);
-        ctx.fillRect(x + w - 12, y + h - 10, 6, 8);
-        // Пламя
-        ctx.fillStyle = '#ffff00';
-        ctx.fillRect(x + 7, y + h - 4, 4, 4);
-        ctx.fillRect(x + w - 11, y + h - 4, 4, 4);
-      } else if(type === 'shield'){
-        ctx.strokeStyle = '#00bcd4';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(x + w/2, y + h/2, w/2 - 2, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(0, 188, 212, 0.3)';
-        ctx.fill();
-      }
-      ctx.restore();
-    }
+  } else if(type === 'jetpack'){
+    // Корпус джетпака
+    ctx.fillStyle = '#546e7a';
+    roundRect(x + 6, y + 4, w - 12, h - 14, 4, true);
+    // Баки
+    ctx.fillStyle = '#37474f';
+    roundRect(x + 2, y + 8, 8, h - 20, 3, true);
+    roundRect(x + w - 10, y + 8, 8, h - 20, 3, true);
+    // Сопла
+    ctx.fillStyle = '#ff5722';
+    ctx.fillRect(x + 4, y + h - 10, 6, 8);
+    ctx.fillRect(x + w - 10, y + h - 10, 6, 8);
+    // Огонь (анимированный)
+    const flameH = 4 + Math.sin(frame * 0.3) * 3;
+    ctx.fillStyle = '#ffeb3b';
+    ctx.fillRect(x + 5, y + h - 2, 4, flameH);
+    ctx.fillRect(x + w - 9, y + h - 2, 4, flameH);
+    ctx.fillStyle = '#ff9800';
+    ctx.fillRect(x + 6, y + h - 2, 2, flameH - 2);
+    ctx.fillRect(x + w - 8, y + h - 2, 2, flameH - 2);
     
+  } else if(type === 'shield'){
+    // Щит-сфера
+    const gradient = ctx.createRadialGradient(
+      x + w/2, y + h/2, 0,
+      x + w/2, y + h/2, w/2
+    );
+    gradient.addColorStop(0, 'rgba(0, 229, 255, 0.4)');
+    gradient.addColorStop(0.7, 'rgba(0, 188, 212, 0.2)');
+    gradient.addColorStop(1, 'rgba(0, 150, 180, 0.1)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x + w/2, y + h/2, w/2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+    // Обводка
+    ctx.strokeStyle = '#00e5ff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Блик
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath();
+    ctx.arc(x + w/3, y + h/3, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  ctx.restore();
+} 
     // Добавляем свечение для видимости
     ctx.save();
     ctx.globalAlpha = 0.3 + Math.sin(frame * 0.1) * 0.2;
