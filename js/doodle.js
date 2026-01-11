@@ -586,16 +586,6 @@ function drawPickupItem(x, y, w, h, type){
   
   ctx.restore();
 } 
-    // Добавляем свечение для видимости
-    ctx.save();
-    ctx.globalAlpha = 0.3 + Math.sin(frame * 0.1) * 0.2;
-    ctx.strokeStyle = type === 'boots' ? '#ffeb3b' : type === 'jetpack' ? '#ff5722' : '#00bcd4';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(x + w/2, y + h/2, w/2 + 4, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
 
   function drawMob(x,y,w,h,type){
     const img = (type==='walker') ? Spr.mob_walker : Spr.mob_flyer;
