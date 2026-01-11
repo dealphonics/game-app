@@ -512,7 +512,7 @@ function makePlat(x, y, w, h, type, canSpawnPickup = true){
     }
   }
 
-  // Рисование пикапов — только программная графика (без спрайтов с белым фоном)
+ // Рисование пикапов — только программная графика
 function drawPickupItem(x, y, w, h, type){
   ctx.save();
   
@@ -585,8 +585,7 @@ function drawPickupItem(x, y, w, h, type){
   }
   
   ctx.restore();
-} 
-
+}
   function drawMob(x,y,w,h,type){
     const img = (type==='walker') ? Spr.mob_walker : Spr.mob_flyer;
     if(img && img.complete){
